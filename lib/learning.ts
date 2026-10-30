@@ -80,14 +80,31 @@ export function selectAdults(minAge: number) {
   return PEOPLE.filter((person) => person.age >= minAge)
 }
 
-export type Track = 'Foundations' | 'Vision' | 'Language & agents' | 'Advanced'
+export type CoreTrack =
+  | 'Fundamentals & Traditional ML'
+  | 'Natural Language Processing'
+  | 'Computer Vision'
+  | 'LLMs & Autonomous Agents'
+
+export type ApplicationVertical =
+  | 'Software Engineering & Dev Tools'
+  | 'Robotics & Spatial AI'
+  | 'Linguistics & Communication'
+  | 'Finance & FinTech'
+  | 'Healthcare & Life Sciences'
+  | 'Social Impact & Governance'
+
+// Backward-compatible alias
+export type Track = CoreTrack
+
 export type Workshop = {
   slug: string
   sourceTitle: string
   number: string
   title: string
   description: string
-  track: Track
+  track: CoreTrack
+  vertical: ApplicationVertical
   level: string
   time: string
   prerequisite: string
@@ -113,7 +130,8 @@ export const WORKSHOPS: Workshop[] = [
     title: 'See what a computer sees.',
     description:
       'Turn pixels into edges. Change a tiny filter and watch an image transform.',
-    track: 'Vision',
+    track: 'Computer Vision',
+    vertical: 'Robotics & Spatial AI',
     level: 'Beginner friendly',
     time: '8 min',
     prerequisite: 'A little curiosity. Basic Python helps with the notebook.',
@@ -144,7 +162,8 @@ export const WORKSHOPS: Workshop[] = [
     title: 'Make sense of a little data.',
     description:
       'Explore a DataFrame, build a new column, and see exactly which rows change.',
-    track: 'Foundations',
+    track: 'Fundamentals & Traditional ML',
+    vertical: 'Software Engineering & Dev Tools',
     level: 'Beginner friendly',
     time: '6 min',
     prerequisite:
@@ -177,7 +196,8 @@ export const WORKSHOPS: Workshop[] = [
     title: 'Ask better questions of data.',
     description:
       'Write a query one choice at a time. See the matching rows, then open the full SQL lab.',
-    track: 'Foundations',
+    track: 'Fundamentals & Traditional ML',
+    vertical: 'Software Engineering & Dev Tools',
     level: 'Beginner friendly',
     time: '7 min',
     prerequisite: 'Comfort reading a small table.',
@@ -209,7 +229,8 @@ export const WORKSHOPS: Workshop[] = [
     title: 'Give an answer somewhere to start.',
     description:
       'Follow a question through chunks, retrieval, context, and a research report.',
-    track: 'Language & agents',
+    track: 'LLMs & Autonomous Agents',
+    vertical: 'Software Engineering & Dev Tools',
     level: 'Intermediate',
     time: '10 min',
     prerequisite: 'Python functions and an introduction to language models.',
@@ -240,7 +261,8 @@ export const WORKSHOPS: Workshop[] = [
     title: 'Start with a few lines of Python.',
     description:
       'Variables, lists, decisions, loops. The building blocks behind the bigger ideas.',
-    track: 'Foundations',
+    track: 'Fundamentals & Traditional ML',
+    vertical: 'Software Engineering & Dev Tools',
     level: 'First steps',
     time: '10 min',
     prerequisite: 'No previous programming experience needed.',
@@ -270,7 +292,8 @@ export const WORKSHOPS: Workshop[] = [
     title: 'From a digit to a prediction.',
     description:
       'Follow handwritten digits through convolution, pooling, and classification.',
-    track: 'Vision',
+    track: 'Computer Vision',
+    vertical: 'Robotics & Spatial AI',
     level: 'Intermediate',
     time: '12 min',
     prerequisite: 'Basic Python and familiarity with arrays.',
@@ -300,7 +323,8 @@ export const WORKSHOPS: Workshop[] = [
     title: 'There is more to “not bad.”',
     description:
       'Explore the choices between raw text and a sentiment prediction.',
-    track: 'Language & agents',
+    track: 'Natural Language Processing',
+    vertical: 'Linguistics & Communication',
     level: 'Intermediate',
     time: '10 min',
     prerequisite: 'Basic Python and DataFrames.',
@@ -330,7 +354,8 @@ export const WORKSHOPS: Workshop[] = [
     title: 'Give generation a little structure.',
     description:
       'Explore structured text outputs and image generation guided by spatial constraints.',
-    track: 'Advanced',
+    track: 'Computer Vision',
+    vertical: 'Robotics & Spatial AI',
     level: 'Intermediate',
     time: '10 min',
     prerequisite: 'Python and an introduction to generative models.',

@@ -1,22 +1,33 @@
 import { useState } from 'react'
-import { WORKSHOPS, Track } from '../../lib/learning'
+import { WORKSHOPS, Track, ApplicationVertical } from '../../lib/learning'
 import { Eyebrow, StudioLayout } from '../../components/studio/StudioLayout'
 import { WorkshopCard } from '../../components/studio/WorkshopCard'
 
-const tracks: ('All topics' | Track)[] = [
-  'All topics',
-  'Foundations',
-  'Vision',
-  'Language & agents',
-  'Advanced',
+const tracks: ('All tracks' | Track)[] = [
+  'All tracks',
+  'Fundamentals & Traditional ML',
+  'Natural Language Processing',
+  'Computer Vision',
+  'LLMs & Autonomous Agents',
 ]
+
+const verticals: ('All verticals' | ApplicationVertical)[] = [
+  'All verticals',
+  'Software Engineering & Dev Tools',
+  'Robotics & Spatial AI',
+  'Linguistics & Communication',
+]
+
 export default function Learn() {
-  const [track, setTrack] = useState<string>('All topics')
+  const [track, setTrack] = useState<string>('All tracks')
+  const [vertical, setVertical] = useState<string>('All verticals')
   const [search, setSearch] = useState('')
+
   const workshops = WORKSHOPS.filter(
     (workshop) =>
-      (track === 'All topics' || workshop.track === track) &&
-      `${workshop.title} ${workshop.description} ${workshop.track}`
+      (track === 'All tracks' || workshop.track === track) &&
+      (vertical === 'All verticals' || workshop.vertical === vertical) &&
+      `${workshop.title} ${workshop.description} ${workshop.track} ${workshop.vertical}`
         .toLowerCase()
         .includes(search.trim().toLowerCase()),
   )
@@ -46,7 +57,7 @@ export default function Learn() {
           <div
             className="st-topic-filters"
             role="group"
-            aria-label="Filter workshops by topic"
+            aria-label="Filter workshops by core track"
           >
             {tracks.map((topic) => (
               <button
@@ -75,9 +86,26 @@ export default function Learn() {
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Something you’re curious about…"
+              placeholder="Search by topic, vertical, or keyword…"
             />
           </label>
+        </div>
+        <div
+          className="st-topic-filters"
+          role="group"
+          aria-label="Filter workshops by application vertical"
+          style={{ paddingTop: '8px', borderBlock: 'none' }}
+        >
+          {verticals.map((vert) => (
+            <button
+              key={vert}
+              aria-pressed={vertical === vert}
+              onClick={() => setVertical(vert)}
+              style={{ fontSize: '9px', opacity: 0.85 }}
+            >
+              {vert}
+            </button>
+          ))}
         </div>
         <p className="st-result-count" aria-live="polite">
           {workshops.length} workshop{workshops.length === 1 ? '' : 's'} to
@@ -96,7 +124,8 @@ export default function Learn() {
               className="st-button st-button-primary"
               onClick={() => {
                 setSearch('')
-                setTrack('All topics')
+                setTrack('All tracks')
+                setVertical('All verticals')
               }}
             >
               Show all workshops

@@ -50,7 +50,7 @@ export default function WorkshopPage({ workshop }: { workshop: Workshop }) {
           ← Back to the library
         </Link>
         <header className="st-lesson-header">
-          <Eyebrow>{workshop.track} / A PYONEERS FIELD NOTE</Eyebrow>
+          <Eyebrow>{workshop.track} · {workshop.vertical} / A PYONEERS FIELD NOTE</Eyebrow>
           <h1>{workshop.title}</h1>
           <p>{workshop.description}</p>
           <div className="st-lesson-meta">

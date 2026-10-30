@@ -79,7 +79,7 @@ export function WorkshopCard({ workshop }: { workshop: Workshop }) {
         <TopicArt topic={workshop.slug} />
         <div className="st-card-body">
           <div className="st-card-meta">
-            <span>{workshop.track}</span>
+            <span>{workshop.track} · {workshop.vertical}</span>
             <span>
               {workshop.interactive ? 'Try it here' : 'Workshop guide'}{' '}
               <Arrow diagonal />

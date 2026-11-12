@@ -1,459 +1,457 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import Head from 'next/head'
+import Image from 'next/image'
 import Navigation from '../components/Navigation'
-import Carousel from '../components/Carousel'
-
-const features = [
-  {
-    title: 'EDGE Projects',
-    subtitle: 'Applied Machine Learning',
-    description: 'Multi-quarter, team-led projects exploring real-world ML applications. From autonomous data labeling to campus dashboards — build practical systems and ship real impact.',
-  },
-  {
-    title: 'Pyoneer Workshops',
-    subtitle: 'Hands-on ML Curriculum',
-    description: 'Beginner to advanced Python and ML workshops. Weekly hands-on sessions with exercises, notebooks, and recorded sessions. Learn by building.',
-  },
-  {
-    title: 'Bitcamp Hackathon',
-    subtitle: 'Weekend Innovation Sprint',
-    description: 'Intensive 24-48 hour hackathons to prototype AI projects, collaborate across teams, and compete for mentorship prizes and recognition.',
-  },
-  {
-    title: 'Research Spotlight',
-    subtitle: 'Student-Led Exploration',
-    description: 'Peer-reviewed research groups diving deep into cutting-edge ML topics. Present your findings, publish papers, and contribute to the field.',
-  },
-]
-
-const projects = [
-  {
-    title: 'Vex Voodoo Recommendation Engine',
-    tabLabel: 'Vex Voodoo',
-    description:
-      'Builds an agent-based AI system that generates architecture recommendations by combining recommender systems with autonomous reasoning.',
-    tags: ['multi-agent systems', 'recommender systems', 'AI architecture'],
-    leaders: ['TBD'],
-    thumbColorA: '#2563EB',
-    thumbColorB: '#0EA5E9',
-  },
-  {
-    title: 'Skin Lesion Analysis',
-    tabLabel: 'Skin Lesion',
-    description:
-      'Uses JEPA-based self-supervised learning to align medical images and improve skin cancer diagnosis accuracy.',
-    tags: ['self-supervised learning', 'medical AI', 'computer vision'],
-    leaders: ['TBD'],
-    thumbColorA: '#DC2626',
-    thumbColorB: '#F97316',
-  },
-  {
-    title: 'AI Dungeon Master',
-    tabLabel: 'Dungeon Master',
-    description:
-      'Creates a real-time storytelling agent that adapts narratives dynamically based on player input and persistent world state.',
-    tags: ['LLM agents', 'interactive systems', 'game AI'],
-    leaders: ['TBD'],
-    thumbColorA: '#6366F1',
-    thumbColorB: '#8B5CF6',
-  },
-  {
-    title: 'Autonomous Warehouse Route Planner',
-    tabLabel: 'Warehouse RL',
-    description:
-      'Trains reinforcement learning agents to optimize multi-robot navigation and logistics in warehouse environments.',
-    tags: ['reinforcement learning', 'robotics', 'optimization'],
-    leaders: ['TBD'],
-    thumbColorA: '#059669',
-    thumbColorB: '#22C55E',
-  },
-  {
-    title: 'AI Medical Report Summarizer & Risk Flagger',
-    tabLabel: 'Med Reports',
-    description:
-      'Develops an LLM-powered system to summarize complex medical reports and identify potential health risks using RAG and tool-augmented reasoning.',
-    tags: ['NLP', 'LLMs', 'healthcare AI'],
-    leaders: ['TBD'],
-    thumbColorA: '#B45309',
-    thumbColorB: '#F59E0B',
-  },
-]
-
-const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
-
-type EventType = 'workshop' | 'hackathon' | 'speaker' | 'social'
-
-type CalendarEvent = {
-  label: string
-  type: EventType
-  color: string
-  detail: string
-}
-
-const EVENT_CATEGORIES: { type: EventType; label: string; color: string; count: string; desc: string }[] = [
-  { type: 'workshop', label: 'Workshops', color: '#2563EB', count: '08 Planned', desc: 'Hands-on Pyoneer labs covering Python, ML, and deep learning.' },
-  { type: 'hackathon', label: 'Hackathons', color: '#DC2626', count: '02 Active', desc: 'Bitcamp sprints and hack nights — 24-48 hour builds.' },
-  { type: 'speaker', label: 'Speakers', color: '#8B5CF6', count: '04 Planned', desc: 'Monthly talks from researchers, engineers, and founders.' },
-  { type: 'social', label: 'Socials', color: '#059669', count: '03 Planned', desc: 'Community meetups, mentorship mixers, and cross-team bonding.' },
-]
-
-const calendarEvents: Record<string, CalendarEvent> = {
-  '2026-03-20': { label: 'Pyoneer Workshop', type: 'workshop', color: '#2563EB', detail: 'Intro to Pandas and data wrangling basics.' },
-  '2026-03-27': { label: 'Speaker Series', type: 'speaker', color: '#8B5CF6', detail: 'Guest talk on large-scale ML infrastructure.' },
-  '2026-04-03': { label: 'Pyoneer Workshop', type: 'workshop', color: '#2563EB', detail: 'Neural network fundamentals with PyTorch.' },
-  '2026-04-09': { label: 'Hack Night', type: 'hackathon', color: '#DC2626', detail: 'Open-format evening hack session — bring your project.' },
-  '2026-04-10': { label: 'Pyoneer Workshop', type: 'workshop', color: '#2563EB', detail: 'Convolutional networks and image classification.' },
-  '2026-04-15': { label: 'Speaker Series', type: 'speaker', color: '#8B5CF6', detail: 'Research talk on self-supervised learning methods.' },
-  '2026-04-17': { label: 'Pyoneer Workshop', type: 'workshop', color: '#2563EB', detail: 'Transfer learning and fine-tuning pretrained models.' },
-  '2026-04-22': { label: 'Community Social', type: 'social', color: '#059669', detail: 'Casual mixer with pizza and project demos.' },
-  '2026-04-24': { label: 'Pyoneer Workshop', type: 'workshop', color: '#2563EB', detail: 'Sequence models — RNNs, LSTMs, and attention.' },
-  '2026-04-26': { label: 'Bitcamp Day 1', type: 'hackathon', color: '#DC2626', detail: 'Kickoff, team formation, and hacking begins.' },
-  '2026-04-27': { label: 'Bitcamp Day 2', type: 'hackathon', color: '#DC2626', detail: 'Final submissions, demos, and awards.' },
-  '2026-05-01': { label: 'Pyoneer Workshop', type: 'workshop', color: '#2563EB', detail: 'Intro to transformers and HuggingFace.' },
-  '2026-05-08': { label: 'Pyoneer Workshop', type: 'workshop', color: '#2563EB', detail: 'Deploying ML models to production.' },
-  '2026-05-13': { label: 'Speaker Series', type: 'speaker', color: '#8B5CF6', detail: 'Industry panel on AI careers and hiring.' },
-  '2026-05-16': { label: 'End-of-Sem Social', type: 'social', color: '#059669', detail: 'Wrap-up celebration and project showcase.' },
-  '2026-05-22': { label: 'Pyoneer Workshop', type: 'workshop', color: '#2563EB', detail: 'Reinforcement learning fundamentals.' },
-}
-
-function todayKey() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-function buildCalendarGrid(year: number, month: number) {
-  const firstDay = new Date(year, month, 1).getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const daysInPrev = new Date(year, month, 0).getDate()
-
-  // Monday = 0 ... Sunday = 6
-  const startOffset = (firstDay + 6) % 7
-
-  const cells: { day: number; current: boolean; key: string }[] = []
-
-  // Previous month filler
-  for (let i = startOffset - 1; i >= 0; i--) {
-    const d = daysInPrev - i
-    const pm = month === 0 ? 11 : month - 1
-    const py = month === 0 ? year - 1 : year
-    cells.push({ day: d, current: false, key: `${py}-${String(pm + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}` })
-  }
-
-  // Current month
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ day: d, current: true, key: `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}` })
-  }
-
-  // Next month filler to complete the grid row
-  const remaining = (7 - (cells.length % 7)) % 7
-  for (let d = 1; d <= remaining; d++) {
-    const nm = month === 11 ? 0 : month + 1
-    const ny = month === 11 ? year + 1 : year
-    cells.push({ day: d, current: false, key: `${ny}-${String(nm + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}` })
-  }
-
-  return cells
-}
+import SiteFooter from '../components/SiteFooter'
+import {
+  CLUB,
+  LINKS,
+  PILLARS,
+  EDGE_PITCH,
+  EVENTS,
+  EVENT_KIND_LABEL,
+  CADENCE,
+  EDGE_APPLICATIONS_OPEN,
+} from '../src/content/club'
+import type { ClubEvent } from '../src/content/club'
+import { PROJECTS } from '../src/content/projects'
+import { shortDate, longDate, daysAway, whenLabel } from '../src/lib/dates'
 
 export default function Home() {
-  const [activeProject, setActiveProject] = useState(0)
-  const active = projects[activeProject]
-
-  const [calMonth, setCalMonth] = useState(3) // April (0-indexed)
-  const [calYear, setCalYear] = useState(2026)
-  const [activeFilter, setActiveFilter] = useState<EventType | null>(null)
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
-
-  const today = todayKey()
-  const calCells = buildCalendarGrid(calYear, calMonth)
-
-  const selectedEvent = selectedDate ? calendarEvents[selectedDate] ?? null : null
-
-  function prevMonth() {
-    setSelectedDate(null)
-    if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1) }
-    else setCalMonth(m => m - 1)
-  }
-  function nextMonth() {
-    setSelectedDate(null)
-    if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1) }
-    else setCalMonth(m => m + 1)
-  }
-
-  function toggleFilter(type: EventType) {
-    setActiveFilter(f => f === type ? null : type)
-    setSelectedDate(null)
-  }
+  const [activeId, setActiveId] = useState(PROJECTS[0].id)
+  const active = PROJECTS.find((p) => p.id === activeId) ?? PROJECTS[0]
 
   return (
-    <div className="min-h-screen bg-background text-foreground film-grain">
-      <Navigation />
+    <>
+      <Head>
+        <title>BigThink AI · Think Big</title>
+        <meta
+          name="description"
+          content={`${CLUB.name} is a student-run AI organization at the ${CLUB.school}. ${CLUB.mission}.`}
+        />
+      </Head>
 
-      <main className="homepage-main">
-        {/* ── Hero ── */}
-        <section id="hero" className="hero-section">
-          <p className="kicker-small">Student-run AI Club</p>
-          <h1 className="hero-title">
-            Applied Machine Learning,<br />Built Together
-          </h1>
-          <p className="hero-lead">
-            Cross-disciplinary projects, hands-on workshops, and research that
-            bridges coursework to real-world impact. Join a project, teach a
-            workshop, or attend an event.
-          </p>
-          <div className="hero-cta-row">
-            <a className="btn-primary" href="#join">Join Us</a>
-            <a className="btn-secondary" href="#projects">Explore Projects</a>
-          </div>
-        </section>
+      <div className="page film-grain" id="top">
+        <Navigation />
 
-        {/* ── About ── */}
-        <section id="about" className="section">
-          <div className="section-header">
-            <p className="kicker-small">Who We Are</p>
-            <h2 className="h2-serif">About BigThinkAI</h2>
-          </div>
-          <div className="about-content">
-            <p>
-              BigThinkAI is a student-run club focused on applied machine learning,
-              research, and community learning. We organize cross-disciplinary
-              projects (EDGE), hands-on workshops (Pyoneer), hackathons (Bitcamp),
-              speaker series, and student-led research groups.
-            </p>
-            <p>
-              Our goal is to build practical AI projects, teach production-level
-              skills, and create pathways from coursework to real-world impact — all
-              within a supportive, beginner-friendly community.
-            </p>
-          </div>
-        </section>
+        <main>
+          {/* ════════ HERO ════════ */}
+          <section className="hero">
+            <div className="shell">
+              <div className="hero__frame marks">
+                <span className="marks-tr" aria-hidden="true" />
+                <span className="marks-bl" aria-hidden="true" />
 
-        {/* ── Featured Initiatives Carousel ── */}
-        <section id="featured" className="section">
-          <div className="section-header">
-            <p className="kicker-small">What We Do</p>
-            <h2 className="h2-serif">Featured Initiatives</h2>
-          </div>
-          <Carousel
-            autoPlay
-            autoPlayInterval={6000}
-            showIndicators
-            showControls
-          >
-            {features.map((f) => (
-              <div key={f.title} className="carousel-card">
-                <h3 className="carousel-card__title">{f.title}</h3>
-                <p className="carousel-card__subtitle">{f.subtitle}</p>
-                <p className="carousel-card__desc">{f.description}</p>
-                <button className="btn-primary carousel-card__cta">Learn More</button>
+                <h1 className="hero__wordmark">BigThink AI</h1>
+
+                <p className="hero__tagline">
+                  <span className="crosshair" aria-hidden="true" />
+                  <span className="hero__tagline-text">Think Big</span>
+                  <span className="crosshair" aria-hidden="true" />
+                </p>
+
+                <div className="hero__cta">
+                  <a
+                    className="btn btn-primary"
+                    href={LINKS.discord}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Join the Discord <span className="arrow" aria-hidden="true">→</span>
+                  </a>
+                  <a className="btn btn-ghost" href="#projects">
+                    See EDGE Projects
+                  </a>
+                </div>
+
+                <p className="hero__meta">
+                  <span>{CLUB.school}</span>
+                  <span>EDGE Teams 2026–2027</span>
+                  <span>Open to all majors</span>
+                </p>
               </div>
-            ))}
-          </Carousel>
-        </section>
+            </div>
 
-        {/* ── Projects (Showcase + Tabs) ── */}
-        <section id="projects" className="section">
-          <div className="section-header">
-            <p className="kicker-small">EDGE &middot; Multi-quarter Team Projects</p>
-            <h2 className="h2-serif">Featured Projects</h2>
-          </div>
+            <a className="hero__scroll" href="#mission" aria-label="Scroll to mission">
+              <span className="hero__scroll-line" aria-hidden="true" />
+              Scroll
+            </a>
+          </section>
 
-          <div className="project-showcase">
-            {/* Left: showcase panel */}
-            <div
-              className="project-showcase__panel"
-              style={{ background: active.thumbColorA }}
-            >
-              <h3 className="project-showcase__title">{active.title}</h3>
-              <p className="project-showcase__desc">{active.description}</p>
-              <div className="project-showcase__tags">
-                {active.tags.map((t) => (
-                  <span key={t} className="project-showcase__tag">{t}</span>
+          {/* ════════ MISSION ════════ */}
+          <section className="section" id="mission">
+            <div className="shell">
+              <div className="section-head">
+                <p className="kicker">01 / Mission</p>
+                <h2 className="section-title">Our Mission</h2>
+                <span className="hatch" aria-hidden="true" />
+              </div>
+
+              <div className="mission">
+                <p className="mission__statement">
+                  To push <em>beyond the frontier</em> of AI.
+                </p>
+                <div className="mission__body">
+                  <p>{CLUB.purpose}</p>
+                  <p>
+                    Workshops start non-technical and end technical. Build teams hand
+                    students a project to own end to end.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ════════ WHAT WE DO ════════ */}
+          <section className="section" id="what-we-do">
+            <div className="shell">
+              <div className="section-head">
+                <p className="kicker">02 / Programs</p>
+                <h2 className="section-title">What We Do</h2>
+                <span className="hatch" aria-hidden="true" />
+              </div>
+
+              <div className="pillars">
+                {PILLARS.map((p) => (
+                  <article className="pillar" key={p.index}>
+                    <span className="pillar__index">{p.index}</span>
+                    <h3 className="pillar__name">{p.name}</h3>
+                    <p className="pillar__desc">{p.desc}</p>
+                    <ul className="pillar__facts">
+                      {p.facts.map((f) => (
+                        <li key={f}>{f}</li>
+                      ))}
+                    </ul>
+                  </article>
                 ))}
               </div>
-              <div className="project-showcase__leaders">
-                <span className="project-showcase__leaders-label">Project Leaders</span>
-                <span className="project-showcase__leaders-names">
-                  {active.leaders.join(' · ')}
-                </span>
-              </div>
             </div>
+          </section>
 
-            {/* Right: stacked tabs */}
-            <div className="project-tabs" role="tablist" aria-label="Project tabs">
-              {projects.map((p, i) => (
-                <button
-                  key={p.title}
-                  role="tab"
-                  aria-selected={i === activeProject}
-                  className={`project-tab ${i === activeProject ? 'project-tab--active' : ''}`}
-                  style={{
-                    '--tab-color-a': p.thumbColorA,
-                    '--tab-color-b': p.thumbColorB,
-                  } as React.CSSProperties}
-                  onClick={() => setActiveProject(i)}
-                >
-                  <span className="project-tab__label">{p.tabLabel}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── Workshops & Events ── */}
-        <section id="workshops" className="section">
-          <div className="section-header">
-            <p className="kicker-small">Learn &middot; Build &middot; Compete</p>
-            <h2 className="h2-serif">Workshops &amp; Events</h2>
-          </div>
-
-          <div className="events-layout">
-            {/* Left: mini calendar */}
-            <div className="events-calendar">
-              <div className="events-calendar__header">
-                <h3 className="events-calendar__month">{MONTH_NAMES[calMonth]} {calYear}</h3>
-                <div className="events-calendar__nav">
-                  <button className="events-calendar__arrow" aria-label="Previous month" onClick={prevMonth}>&lsaquo;</button>
-                  <button className="events-calendar__arrow" aria-label="Next month" onClick={nextMonth}>&rsaquo;</button>
-                </div>
+          {/* ════════ EDGE PROJECTS ════════ */}
+          <section className="section" id="projects">
+            <div className="shell">
+              <div className="section-head">
+                <p className="kicker">03 / EDGE Teams · 2026–2027</p>
+                <h2 className="section-title">The Projects</h2>
+                <span className="hatch" aria-hidden="true" />
+                <p className="section-lede">
+                  Pick a team for the short version, then open its page.
+                </p>
               </div>
 
-              {/* Detail strip — shown when a day with an event is clicked */}
-              {selectedEvent && selectedDate && (
-                <div className="events-calendar__detail" style={{ borderLeftColor: selectedEvent.color }}>
-                  <div className="events-calendar__detail-head">
-                    <span className="events-calendar__detail-dot" style={{ background: selectedEvent.color }} />
-                    <span className="events-calendar__detail-label">{selectedEvent.label}</span>
-                    <span className="events-calendar__detail-date">{selectedDate}</span>
+              <div className="dossier">
+                <div className="rail" role="tablist" aria-label="EDGE project teams">
+                  <div className="rail__head">
+                    <span>Teams</span>
                   </div>
-                  <p className="events-calendar__detail-text">{selectedEvent.detail}</p>
+                  {PROJECTS.map((p, i) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      role="tab"
+                      id={`tab-${p.id}`}
+                      aria-selected={p.id === activeId}
+                      aria-controls={`panel-${p.id}`}
+                      className="rail__item"
+                      data-team={p.theme}
+                      onClick={() => setActiveId(p.id)}
+                    >
+                      <span className="rail__dot" aria-hidden="true" />
+                      <span>{p.railLabel}</span>
+                      <span className="rail__num" aria-hidden="true">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                    </button>
+                  ))}
                 </div>
+
+                <div
+                  className="record"
+                  id={`panel-${active.id}`}
+                  role="tabpanel"
+                  aria-labelledby={`tab-${active.id}`}
+                  data-team={active.theme}
+                >
+                  <div className="record__swap" key={active.id}>
+                    <div className="record__media">
+                      <Image
+                        src={active.image}
+                        alt={active.imageAlt}
+                        fill
+                        sizes="(max-width: 1000px) 100vw, 62vw"
+                        priority={active.id === PROJECTS[0].id}
+                      />
+                      <div className="record__titlebox">
+                        <h3 className="record__title">{active.name}</h3>
+                        <p className="record__sector">{active.sector}</p>
+                      </div>
+                    </div>
+
+                    <div className="record__body">
+                      <div>
+                        <p className="field__label">Description</p>
+                        <p className="record__desc">{active.description}</p>
+                        <div className="record__goal">
+                          <p className="record__goal-text">
+                            <strong>Deliverable:</strong> {active.goal}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="field__label">Technical approach</p>
+                        <ul className="skills">
+                          {active.skills.map((s) => (
+                            <li key={s}>{s}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="record__foot">
+                      <a className="record__open" href={`/projects/${active.id}`}>
+                        <span className="record__open-key">Team page</span>
+                        <span className="record__open-name">
+                          {active.name}{' '}
+                          <span className="arrow" aria-hidden="true">→</span>
+                        </span>
+                      </a>
+                      <span className="record__foot-note">
+                        Full brief, milestones, and how to work with the team.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ════════ WHY EDGE ════════ */}
+          <section className="section" id="why-edge">
+            <div className="shell">
+              <div className="section-head">
+                <p className="kicker">04 / The Program</p>
+                <h2 className="section-title">Inside EDGE</h2>
+                <span className="hatch" aria-hidden="true" />
+                <p className={`status${EDGE_APPLICATIONS_OPEN ? '' : ' status--closed'}`}>
+                  <span className="status__dot" aria-hidden="true" />
+                  {EDGE_APPLICATIONS_OPEN
+                    ? 'Applications open'
+                    : '2026–27 applications closed'}
+                </p>
+                <p className="section-note">
+                  {EDGE_APPLICATIONS_OPEN
+                    ? 'What a team signs up for, and what we look for.'
+                    : 'Teams are set for this cycle. Here is what the next call will ask for. Intake is announced in Discord.'}
+                </p>
+              </div>
+
+              <div className="facing">
+                <div className="facing__col">
+                  <h3 className="facing__title">What members get</h3>
+                  <ul className="facing__list">
+                    {EDGE_PITCH.why.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="facing__col facing__col--want">
+                  <h3 className="facing__title">What we look for</h3>
+                  <ul className="facing__list">
+                    {EDGE_PITCH.looking.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ════════ WHAT'S NEXT ════════ */}
+          <WhatsNext />
+
+          {/* ════════ JOIN ════════ */}
+          <section className="section join" id="join">
+            <div className="shell">
+              <h2 className="join__title">Are You Ready?</h2>
+              <p className="join__lede">
+                EDGE teams are set for 2026–27. Workshops run every week and they are
+                open to everyone. Discord is where announcements land and where the
+                next intake gets called.
+              </p>
+
+              <div className="doors">
+                <a className="door door--primary" href={LINKS.discord} target="_blank" rel="noopener noreferrer">
+                  <span className="door__kind">Start here</span>
+                  <h3 className="door__name">
+                    Discord <span className="arrow" aria-hidden="true">→</span>
+                  </h3>
+                  <p className="door__note">
+                    Announcements, workshop material, and every team channel.
+                  </p>
+                </a>
+
+                {EDGE_APPLICATIONS_OPEN ? (
+                  <a
+                    className="door"
+                    href={LINKS.edgeApplication}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span className="door__kind">Applications open</span>
+                    <h3 className="door__name">
+                      Join an EDGE Team <span className="arrow" aria-hidden="true">→</span>
+                    </h3>
+                    <p className="door__note">
+                      Join a build team and own a project end to end.
+                    </p>
+                  </a>
+                ) : (
+                  <a className="door" href="#projects">
+                    <span className="door__kind">2026–27 cohort</span>
+                    <h3 className="door__name">
+                      EDGE Teams <span className="arrow" aria-hidden="true">→</span>
+                    </h3>
+                    <p className="door__note">
+                      Closed for this cycle. See what the five teams are building.
+                    </p>
+                  </a>
+                )}
+
+                <a className="door" href={`mailto:${CLUB.email}`}>
+                  <span className="door__kind">Partners &amp; sponsors</span>
+                  <h3 className="door__name">
+                    Work With Us <span className="arrow" aria-hidden="true">→</span>
+                  </h3>
+                  <p className="door__note">
+                    Mentor a team, sponsor the club, or bring us a problem.
+                  </p>
+                </a>
+
+                <a className="door" href={LINKS.instagram} target="_blank" rel="noopener noreferrer">
+                  <span className="door__kind">Follow</span>
+                  <h3 className="door__name">
+                    Instagram <span className="arrow" aria-hidden="true">→</span>
+                  </h3>
+                  <p className="door__note">
+                    Event posts, recaps, and what the teams are shipping.
+                  </p>
+                </a>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <SiteFooter />
+      </div>
+    </>
+  )
+}
+
+function WhatsNext() {
+  // Resolved after mount: the page is statically generated, so build-time
+  // "today" would go stale. Until then we render every event, dateless.
+  const [today, setToday] = useState<Date | null>(null)
+  useEffect(() => setToday(new Date()), [])
+
+  const sorted = [...EVENTS].sort((a, b) => a.date.localeCompare(b.date))
+  const upcoming = today
+    ? sorted.filter((e) => (daysAway(e.date, today) ?? 0) >= 0)
+    : sorted
+
+  const featured: ClubEvent | undefined =
+    upcoming.find((e) => e.poster) ?? upcoming[0]
+  const rest = upcoming.filter((e) => e.id !== featured?.id)
+
+  const delta = featured ? daysAway(featured.date, today) : null
+  const flag = whenLabel(delta)
+
+  return (
+    <section className="section" id="whats-next">
+      <div className="shell">
+        <div className="section-head">
+          <p className="kicker">05 / Upcoming</p>
+          <h2 className="section-title">What&apos;s Next</h2>
+          <span className="hatch" aria-hidden="true" />
+        </div>
+
+        {featured && (
+          <article className="feature">
+            {featured.poster && (
+              <div className="feature__poster">
+                <Image
+                  src={featured.poster}
+                  alt={featured.posterAlt ?? `${featured.title} event poster`}
+                  fill
+                  sizes="(max-width: 760px) 320px, 340px"
+                />
+              </div>
+            )}
+
+            <div className="feature__body">
+              {flag && (
+                <p className={`when-flag${delta === 0 ? ' when-flag--today' : ''}`}>
+                  <span className="when-flag__dot" aria-hidden="true" />
+                  {flag}
+                </p>
               )}
 
-              {/* Color legend */}
-              <div className="events-calendar__legend">
-                {EVENT_CATEGORIES.map((cat) => (
-                  <span
-                    key={cat.type}
-                    className={`events-calendar__legend-item${activeFilter === cat.type ? ' events-calendar__legend-item--active' : ''}`}
-                    onClick={() => toggleFilter(cat.type)}
-                  >
-                    <span className="events-calendar__legend-dot" style={{ background: cat.color }} />
-                    {cat.label}
-                  </span>
-                ))}
-                {activeFilter && (
-                  <button className="events-calendar__legend-clear" onClick={() => { setActiveFilter(null); setSelectedDate(null) }}>
-                    Clear
-                  </button>
-                )}
-              </div>
+              <p className="feature__date">{longDate(featured.date)}</p>
+              <h3 className="feature__title">{featured.title}</h3>
 
-              <div className="events-calendar__days">
-                {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d) => (
-                  <span key={d} className="events-calendar__day-label">{d}</span>
-                ))}
-              </div>
+              <p className="feature__meta">
+                <span>{EVENT_KIND_LABEL[featured.kind]}</span>
+                {featured.time && <span>{featured.time}</span>}
+                {featured.location && <span>{featured.location}</span>}
+              </p>
 
-              <div className="events-calendar__grid">
-                {calCells.map((cell) => {
-                  const ev = calendarEvents[cell.key]
-                  const isToday = cell.key === today
-                  const isSelected = cell.key === selectedDate
-                  const isFiltered = ev && activeFilter && ev.type !== activeFilter
-                  const showDot = ev && !isFiltered
+              {featured.note && <p className="feature__note">{featured.note}</p>}
 
-                  return (
-                    <button
-                      key={cell.key}
-                      type="button"
-                      className={[
-                        'events-calendar__cell',
-                        !cell.current && 'events-calendar__cell--muted',
-                        showDot && 'events-calendar__cell--event',
-                        isToday && 'events-calendar__cell--today',
-                        isSelected && 'events-calendar__cell--selected',
-                      ].filter(Boolean).join(' ')}
-                      onClick={() => {
-                        if (ev && showDot) setSelectedDate(cell.key === selectedDate ? null : cell.key)
-                      }}
-                      tabIndex={cell.current ? 0 : -1}
-                    >
-                      <span className="events-calendar__date">{cell.day}</span>
-                      {showDot && (
-                        <span className="events-calendar__dot" style={{ background: ev.color }} />
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Right: event categories sidebar */}
-            <div className="events-sidebar">
-              <h3 className="events-sidebar__heading">Events</h3>
-
-              {EVENT_CATEGORIES.map((cat) => (
-                <button
-                  key={cat.type}
-                  type="button"
-                  className={`events-protocol${activeFilter === cat.type ? ' events-protocol--active' : ''}`}
-                  onClick={() => toggleFilter(cat.type)}
+              <div className="feature__cta">
+                <a
+                  className="btn btn-ghost"
+                  href={LINKS.discord}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  <span className="events-protocol__dot" style={{ background: cat.color }} />
-                  <span className="events-protocol__count">{cat.count}</span>
-                  <span className="events-protocol__title">{cat.label}</span>
-                  <span className="events-protocol__desc">{cat.desc}</span>
-                </button>
-              ))}
+                  Details in Discord <span className="arrow" aria-hidden="true">→</span>
+                </a>
+              </div>
             </div>
-          </div>
-        </section>
+          </article>
+        )}
 
-        {/* ── Join / CTA ── */}
-        <section id="join" className="section join-section">
-          <div className="join-card">
-            <h2 className="h2-serif">Get Involved</h2>
-            <p className="join-desc">
-              Sign up to receive updates on projects, workshops, and events.
-              Whether you&apos;re a beginner or a researcher — there&apos;s a place for you.
-            </p>
-            <form
-              className="join-form"
-              onSubmit={(e) => {
-                e.preventDefault()
-                alert('Thanks for signing up! (Demo)')
-              }}
-            >
-              <input
-                aria-label="Email address"
-                className="join-input"
-                type="email"
-                placeholder="your@university.edu"
-                required
-              />
-              <button className="btn-primary" type="submit">Sign Up</button>
-            </form>
+        {rest.length > 0 && (
+          <div className="upcoming">
+            {rest.map((e) => (
+              <div
+                key={e.id}
+                className={`upcoming__row${
+                  e.kind === 'deadline' ? ' upcoming__row--deadline' : ''
+                }`}
+              >
+                <span className="upcoming__date">{shortDate(e.date)}</span>
+                <h3 className="upcoming__title">{e.title}</h3>
+                <p className="upcoming__note">
+                  {e.note}
+                  {e.location ? ` · ${e.location}` : ''}
+                </p>
+              </div>
+            ))}
           </div>
-        </section>
-      </main>
+        )}
 
-      {/* ── Footer ── */}
-      <footer className="site-footer">
-        <div className="footer-inner">
-          <div className="footer-brand">
-            <strong className="footer-logo">BigThinkAI</strong>
-            <p className="footer-tagline">Applied ML &middot; Research &middot; Community</p>
-          </div>
-          <div className="footer-links">
-            <a href="mailto:contact@bigthinkai.org">Email</a>
-            <a href="https://github.com/bigthinkai" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a href="https://twitter.com/bigthinkai" target="_blank" rel="noopener noreferrer">Twitter</a>
-            <a href="https://instagram.com/bigthinkai" target="_blank" rel="noopener noreferrer">Instagram</a>
-            <a href="https://linkedin.com/company/bigthinkai" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-          </div>
-          <p className="footer-copy">&copy; {new Date().getFullYear()} BigThinkAI Club. All rights reserved.</p>
+        <div className="cadence">
+          <span className="cadence__label">Every week</span>
+          {CADENCE.map((c) => (
+            <span className="cadence__item" key={c.what}>
+              <strong>{c.what}</strong>
+              {c.note}
+            </span>
+          ))}
         </div>
-      </footer>
-    </div>
+      </div>
+    </section>
   )
 }

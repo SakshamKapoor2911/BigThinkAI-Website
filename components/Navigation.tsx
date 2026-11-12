@@ -1,108 +1,109 @@
 import { useEffect, useRef, useState } from 'react'
 
+const LINKS = [
+  { href: '/#mission', label: 'Mission' },
+  { href: '/#what-we-do', label: 'What We Do' },
+  { href: '/#projects', label: 'EDGE Projects' },
+  { href: '/heartbeat', label: 'Heartbeat' },
+  { href: '/#whats-next', label: "What's Next" },
+  { href: '/#join', label: 'Join' },
+]
+
+export const DISCORD_URL = 'https://discord.gg/CC6ZQ4cnkn'
+
 export default function Navigation() {
   const navRef = useRef<HTMLElement | null>(null)
   const toggleRef = useRef<HTMLButtonElement | null>(null)
-  const linksRef = useRef<HTMLUListElement | null>(null)
-  const [expanded, setExpanded] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
+  // Condense the bar once the page has moved off the hero.
   useEffect(() => {
-    const nav = navRef.current
-    if (!nav) return
-
-    let lastScale = '1'
-    function updateScale() {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-      const y = window.scrollY || document.documentElement.scrollTop
-      let scale = 1
-      if (y > 400) scale = 0.94
-      else if (y > 100) scale = 0.96
-      else scale = 1
-      const s = String(scale)
-      if (s !== lastScale) {
-        nav!.setAttribute('data-scale', s)
-        lastScale = s
-      }
-      const o = Math.min(0.95, 0.6 + y / 1000)
-      ;(nav!.style as any).background = `rgba(255,255,255,${o})`
+    let frame = 0
+    function read() {
+      frame = 0
+      setScrolled((window.scrollY || document.documentElement.scrollTop) > 24)
     }
-
-    updateScale()
-    const onScroll = () => requestAnimationFrame(updateScale)
-    window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
+    function onScroll() {
+      if (!frame) frame = requestAnimationFrame(read)
+    }
+    read()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (frame) cancelAnimationFrame(frame)
+    }
   }, [])
 
+  // Escape and click-outside close the mobile menu.
   useEffect(() => {
-    const links = linksRef.current
-    const toggle = toggleRef.current
-    if (!links || !toggle) return
+    if (!open) return
 
-    if (expanded) {
-      links.style.display = 'flex'
-      links.style.flexDirection = 'column'
-      links.style.position = 'absolute'
-      links.style.top = '56px'
-      links.style.right = '16px'
-      links.style.background = 'var(--color-card)'
-      links.style.padding = '0.5rem'
-      links.style.borderRadius = '12px'
-      links.style.boxShadow = '0 12px 32px rgba(10,10,10,0.08)'
-      links.setAttribute('id', 'main-menu')
-      toggle.setAttribute('aria-controls', 'main-menu')
-      const first = links.querySelector('a') as HTMLElement | null
-      if (first) first.focus()
-    } else {
-      links.style.display = ''
-      links.removeAttribute('id')
-      toggle.focus()
-    }
-  }, [expanded])
-
-  // Close on Escape and click-outside to improve mobile accessibility / UX
-  useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setExpanded(false)
+      if (e.key === 'Escape') {
+        setOpen(false)
+        toggleRef.current?.focus()
+      }
     }
     function onDocClick(e: MouseEvent) {
       const nav = navRef.current
-      if (!nav) return
       const target = e.target as Node | null
-      if (expanded && target && !nav.contains(target)) setExpanded(false)
+      if (nav && target && !nav.contains(target)) setOpen(false)
     }
 
-    if (expanded) {
-      document.addEventListener('keydown', onKey)
-      document.addEventListener('click', onDocClick)
-    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('click', onDocClick)
     return () => {
       document.removeEventListener('keydown', onKey)
       document.removeEventListener('click', onDocClick)
     }
-  }, [expanded])
+  }, [open])
 
   return (
-    <nav ref={navRef} className="site-nav" role="navigation" aria-label="Main navigation">
-      <a className="brand" href="#hero" aria-label="BigThinkAI Home">BigThinkAI</a>
-      <ul ref={linksRef} className="site-links" role="menubar">
-        <li role="none"><a role="menuitem" href="/#about">About</a></li>
-        <li role="none"><a role="menuitem" href="/#projects">Projects</a></li>
-        <li role="none"><a role="menuitem" href="/#workshops">Workshops</a></li>
-        <li role="none"><a role="menuitem" href="/#join">Join</a></li>
-        <li role="none"><a role="menuitem" href="/roadmap">AI + X Roadmap</a></li>
+    <nav
+      ref={navRef}
+      className="site-nav"
+      role="navigation"
+      aria-label="Main navigation"
+      data-open={open}
+      data-scrolled={scrolled}
+    >
+      <a className="brand" href="/#top" aria-label="BigThink AI home">
+        BigThink<span className="brand__big">AI</span>
+      </a>
+
+      <ul className="site-links" id="main-menu">
+        {LINKS.map((l) => (
+          <li key={l.href}>
+            <a href={l.href} onClick={() => setOpen(false)}>
+              {l.label}
+            </a>
+          </li>
+        ))}
+        <li>
+          <a
+            className="nav-cta"
+            href={DISCORD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+          >
+            Discord
+          </a>
+        </li>
       </ul>
 
       <button
         ref={toggleRef}
+        type="button"
         className="nav-toggle"
         aria-controls="main-menu"
-        aria-expanded={expanded}
-        aria-label={expanded ? 'Close menu' : 'Open menu'}
-        onClick={() => setExpanded((s: boolean) => !s)}
+        aria-expanded={open}
+        aria-label={open ? 'Close menu' : 'Open menu'}
+        onClick={() => setOpen((s) => !s)}
       >
-        <span className="hamburger" aria-hidden="true"></span>
+        <span className="hamburger" aria-hidden="true" />
       </button>
-
     </nav>
   )
 }

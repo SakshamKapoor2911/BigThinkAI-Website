@@ -1,372 +1,247 @@
-# BigThinkAI Club Website
+# BigThink AI — Club Website
 
-A modern, minimalist website for BigThinkAI—a student-run club at the University of Maryland focused on applied machine learning, research, and community learning.
+The website for **BigThink AI**, a student-run AI organization at the University of
+Maryland, College Park.
 
-## 🎨 Design Philosophy
+> **Mission:** To push beyond the frontier of AI.
 
-The website follows **Alabaster Minimalism**, an aesthetic inspired by high-quality print design that emphasizes:
-- Extreme clarity and generous whitespace
-- Tactile textures (film grain effects)
-- High contrast readable hierarchy
-- Physical, paper-like digital experience
-
-## ✨ Features
-
-### Core Components
-- **Navigation** — Glassmorphic pill-shaped navbar with scroll scaling effects
-- **Carousel** — Fully accessible image/content carousel with auto-play, touch support, and keyboard navigation
-- **Responsive Design** — Mobile-first approach with Tailwind CSS
-- **Accessibility** — WCAG 2.1 compliant with ARIA labels, semantic HTML, and keyboard navigation
-
-### Key Sections
-- **Hero** — Compelling headline showcasing BigThinkAI's mission
-- **Featured Initiatives** — Carousel highlighting:
-  - **EDGE Projects** — Multi-quarter team-led ML projects
-  - **Pyoneer Workshops** — Hands-on Python and ML curriculum
-  - **Bitcamp Hackathon** — Weekend innovation sprints
-  - **Research Spotlight** — Peer-reviewed research groups
-- **Call-to-Action** — Community engagement and membership information
-
-## 🛠 Tech Stack
-
-| Technology | Purpose |
-|------------|---------|
-| **Next.js 15** | React framework with SSR and static generation |
-| **React 18** | UI library with hooks and functional components |
-| **TypeScript** | Static type safety and better DX |
-| **Tailwind CSS 4** | Utility-first CSS framework |
-| **Jest** | Unit and integration testing framework |
-| **React Testing Library** | Component testing utilities |
-| **ESLint** | Code quality and consistency |
-
-## 📁 Project Structure
-
-```
-BigThinkAI-Website/
-├── components/               # Reusable React components
-│   ├── Navigation.tsx       # Top navigation bar with glassmorphism
-│   ├── Carousel.tsx         # Accessible carousel component
-│   ├── BentoCard.tsx        # Bento-style card layout
-│   └── __tests__/           # Component test files
-├── pages/                   # Next.js page routes
-│   ├── index.tsx            # Homepage
-│   ├── carousel.tsx         # Carousel demo page
-│   ├── bento.tsx            # Bento grid demo
-│   └── _app.tsx             # App wrapper
-├── src/
-│   ├── fonts.ts             # Font configuration
-│   ├── styles/
-│   │   └── globals.css      # Global styles and design tokens
-│   └── typography/          # Typography documentation
-├── design/                  # Design documentation
-│   ├── DESIGN.md            # Complete design system spec
-│   ├── TOKENS.md            # Design token reference
-│   ├── TYPOGRAPHY.md        # Typography guidelines
-│   ├── AGENT-1-README.md    # Design system implementation
-│   ├── AGENT-3-README.md    # Navigation component docs
-│   ├── AGENT-5-README.md    # Carousel component docs
-│   └── AGENT-4-README.md    # Additional features
-├── public/                  # Static assets
-├── jest.config.cjs          # Jest configuration
-├── jest.setup.ts            # Jest setup and mocks
-├── next.config.js           # Next.js configuration
-├── tsconfig.json            # TypeScript configuration
-├── tailwind.config.ts       # Tailwind CSS configuration
-├── postcss.config.js        # PostCSS configuration
-├── package.json             # Project dependencies
-└── README.md                # This file
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-- **Node.js** 18+ and **npm** 9+ (or **yarn**, **pnpm**)
-- Git for version control
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/SakshamKapoor2911/BigThinkAI-Website.git
-   cd BigThinkAI-Website
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start the development server**
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Available Scripts
-
-| Script | Purpose |
-|--------|---------|
-| `npm run dev` | Start local development server with hot reload |
-| `npm run build` | Build for production |
-| `npm start` | Start production server |
-| `npm run lint` | Run ESLint to check code quality |
-| `npm test` | Run Jest test suite |
-
-## 🎯 Component Documentation
-
-### Navigation Component
-**File:** `components/Navigation.tsx`
-
-A glassmorphic navigation bar that scales based on scroll position.
-
-**Features:**
-- Pill-shaped design with `backdrop-filter: blur(40px)`
-- Scroll-based scaling (0.96 at 100-400px, 0.94 at 400px+)
-- Mobile hamburger menu with full accessibility
-- ARIA roles: `navigation`, `menubar`, `menuitem`
-- Escape-to-close and click-outside-close
-- Smooth anchor scrolling to page sections
-
-**Usage:**
-```tsx
-import Navigation from '@/components/Navigation'
-
-export default function Page() {
-  return (
-    <>
-      <Navigation />
-      {/* page content */}
-    </>
-  )
-}
-```
-
-### Carousel Component
-**File:** `components/Carousel.tsx`
-
-A production-ready carousel with advanced accessibility and user interactions.
-
-**Features:**
-- Auto-play with configurable interval
-- Pause on hover, resume on mouse leave
-- Previous/Next navigation buttons
-- Clickable indicator dots
-- Keyboard navigation (Arrow Left/Right)
-- Touch/swipe support for mobile
-- Smooth CSS transitions
-- Respects `prefers-reduced-motion`
-- Full ARIA support and semantic HTML
-
-**Props:**
-```typescript
-interface CarouselProps {
-  children: ReactNode[]           // Slide components
-  autoPlay?: boolean              // Enable auto-play (default: true)
-  autoPlayInterval?: number       // Milliseconds between slides (default: 5000)
-  showIndicators?: boolean        // Show dot indicators (default: true)
-  showControls?: boolean          // Show prev/next buttons (default: true)
-  onSlideChange?: (index: number) => void  // Callback when slide changes
-}
-```
-
-**Usage:**
-```tsx
-import Carousel from '@/components/Carousel'
-
-export default function Page() {
-  return (
-    <Carousel autoPlayInterval={5000} showIndicators>
-      <div>Slide 1</div>
-      <div>Slide 2</div>
-      <div>Slide 3</div>
-    </Carousel>
-  )
-}
-```
-
-### BentoCard Component
-**File:** `components/BentoCard.tsx`
-
-A flexible bento-style card component for showcasing content.
-
-**Features:**
-- Grid-based layout support
-- Customizable sizing and spans
-- Gradient background overlays
-- Icon and text content support
-- Responsive design
-
-## 🎨 Design System
-
-### Color Palette
-```
-Background:    #FBFBFB (Alabaster)
-Foreground:    #1A1A1A (Near Black)
-Primary:       #2563EB (Vibrant Blue)
-Card:          #FFFFFF (Pure White)
-Muted:         #F5F5F5 (Secondary)
-Border:        #E6E6E6 (Subtle Lines)
-```
-
-### Typography
-```
-Sans-serif:    Geist Sans (UI, body text, buttons)
-Monospace:     Geist Mono (Meta tags, dates, code)
-Serif:         Newsreader (Headings, quotes, editorial)
-```
-
-### Effects
-- **Film Grain** — Subtle texture overlay (3.5% opacity)
-- **Dot Grid** — Background pattern (10px spacing)
-- **Blur** — Glassmorphism effect (40px backdrop blur)
-- **Smooth Scroll** — Enhanced anchor navigation
-
-All design tokens are defined in [src/styles/globals.css](src/styles/globals.css) and [design/DESIGN.md](design/DESIGN.md).
-
-## 🧪 Testing
-
-### Run Tests
-```bash
-npm test
-```
-
-### Test Files
-- `components/__tests__/Navigation.test.tsx` — Navigation component unit tests
-
-### Test Coverage
-The Navigation component includes tests for:
-- Rendering and accessibility (roles, aria-labels)
-- Mobile menu toggle behavior
-- Keyboard interactions (Escape key)
-- Scroll-based styling updates
-
-Tests use Jest and React Testing Library with JSDOM environment configured in `jest.setup.ts`.
-
-## 📱 Pages & Routes
-
-| Route | Description |
-|-------|-------------|
-| `/` | Homepage with Navigation and featured initiatives carousel |
-| `/carousel` | Dedicated carousel demo page |
-| `/bento` | Bento grid layout demonstration |
-| `/fonts` | Font showcase and typography |
-| `/typography` | Typography scale and styles |
-
-## ♿ Accessibility
-
-This website follows **WCAG 2.1 Level AA** standards:
-
-- ✅ Semantic HTML elements
-- ✅ ARIA labels and roles
-- ✅ Keyboard navigation support
-- ✅ Color contrast ratios (4.5:1 minimum)
-- ✅ Focus indicators visible
-- ✅ Alternative text for images
-- ✅ Mobile-friendly touch targets (48px minimum)
-- ✅ Respects `prefers-reduced-motion`
-- ✅ Live regions for dynamic content updates
-
-## 🔧 Configuration Files
-
-### Next.js Configuration
-**File:** `next.config.js`
-- Default configuration for framework behavior
-- CSS and JavaScript bundling optimization
-
-### TypeScript Configuration
-**File:** `tsconfig.json`
-- Strict mode enabled
-- Path aliases configured (`@/*` → `./`)
-- React JSX transform
-
-### Tailwind CSS Configuration
-**File:** `tailwind.config.ts`
-- Custom color palette mapped to design system
-- Extended breakpoints for responsive design
-- Custom theme configuration
-
-### Jest Configuration
-**File:** `jest.config.cjs`
-- Configured for Next.js projects
-- TypeScript support via ts-jest
-- JSX transform enabled
-- JSDOM test environment for DOM testing
-
-## 🚢 Deployment
-
-### Build for Production
-```bash
-npm run build
-npm start
-```
-
-### Environment Setup
-No environment variables required for basic setup.
-
-### Recommended Hosting
-- **Vercel** (Optimal for Next.js with zero-config deployment)
-- **AWS Amplify**
-- **Netlify**
-- **Self-hosted Node.js server**
-
-### Performance Optimizations
-- Automatic code splitting via Next.js
-- Image optimization
-- CSS-in-JS tree shaking with Tailwind
-- Static page generation where possible
-
-## 📚 Documentation Reference
-
-For detailed information, see:
-- [Design System Specification](design/DESIGN.md)
-- [Design Tokens](design/TOKENS.md)
-- [Typography Guidelines](design/TYPOGRAPHY.md)
-- [Navigation Component Docs](design/AGENT-3-README.md)
-- [Carousel Component Docs](design/AGENT-5-README.md)
-
-## 👥 Contributing
-
-### Development Workflow
-1. Create a feature branch: `git checkout -b feature/your-feature`
-2. Make changes and commit with conventional commits:
-   - `feat:` for new features
-   - `fix:` for bug fixes
-   - `docs:` for documentation
-   - `test:` for test updates
-   - `refactor:` for code improvements
-3. Push to GitHub: `git push origin feature/your-feature`
-4. Create a Pull Request with detailed description
-
-### Code Standards
-- Follow ESLint rules: `npm run lint`
-- Write tests for new components
-- Use TypeScript for type safety
-- Follow the design system specifications
-- Document complex logic with comments
-
-## 📝 License
-
-This project is private and maintained by the BigThinkAI club at the University of Maryland.
-
-## 📧 Contact & Socials
-
-- **Email:** contact@bigthinkai.org
-- **Twitter/X:** [@bigthinkai](https://twitter.com/bigthinkai)
-- **Instagram:** [@bigthinkai](https://instagram.com/bigthinkai)
-- **LinkedIn:** [BigThinkAI Club](https://linkedin.com/company/bigthinkai)
-- **GitHub:** [github.com/bigthinkai](https://github.com/bigthinkai)
-
-## 🙏 Acknowledgments
-
-This website was developed for BigThinkAI to showcase our:
-- Applied ML research and projects
-- Hands-on workshop programs
-- Hackathon events and competitions
-- Student-led research initiatives
-
-The design philosophy combines modern web standards with print design principles to create a unique, memorable digital presence.
+- **Discord:** https://discord.gg/CC6ZQ4cnkn
+- **Instagram:** https://www.instagram.com/bigthinkai/
+- **Email:** bigthinkai@gmail.com
 
 ---
 
-**Last Updated:** February 2026
-**Version:** 1.0.0
+## Design
+
+The site's visual identity is taken directly from the club's own intro deck rather
+than invented separately:
+
+| Element | Treatment |
+|---|---|
+| **Ground** | Near-black `#08090B` with a CSS-generated diagonal brushed texture and film grain |
+| **Display type** | Josefin Sans, weight 200–300, uppercase, ~0.09em tracking |
+| **Label type** | Oswald, condensed and bold — kickers, sector tags, buttons, nav |
+| **Body type** | JetBrains Mono — the deck sets all technical copy in mono, so does the site |
+| **Accent** | Steel blue `#5B82B8`, the "THINK BIG" blue |
+| **Signal colours** | Live `#6FE35B` · Caution `#F2A33C` · Urgent `#E8453A` — status dots and countdowns |
+| **Devices** | Corner registration marks, hatched rules under headings, crosshair markers |
+
+Everything is defined as CSS custom properties at the top of
+[`src/styles/globals.css`](src/styles/globals.css). Changing a token there
+re-skins the whole site.
+
+## Content
+
+Site copy lives in two editable modules — **edit these, not the components**:
+
+- [`src/content/club.ts`](src/content/club.ts) — mission, purpose, links, programs,
+  recruitment pitch, upcoming events, weekly cadence
+- [`src/content/projects.ts`](src/content/projects.ts) — the EDGE projects:
+  descriptions, sector, stage, target, the partner argument, the technical
+  approach, deliverables, and each project's `theme`
+
+Project artwork in `public/projects/` is exported from the intro deck — all five
+at 1400×787. It is not decoration: each team page is built around its own piece,
+and the per-team palettes are sampled out of them. See **Project pages** below.
+
+### Adding an event
+
+"What's Next" is driven by the `EVENTS` array in `club.ts`. Add an entry and it
+appears — no component changes:
+
+```ts
+{
+  id: 'rl-workshop',
+  title: 'Reinforcement Learning',
+  date: '2026-10-07',          // ISO, parsed as local time
+  time: '5:00–6:00 PM',
+  location: 'ARM 0131',
+  kind: 'workshop',            // workshop | deadline | speaker | social
+  poster: '/events/reinforcement-learning.jpg',   // optional 4:5 graphic
+  posterAlt: '...',
+  note: 'One line about it.',
+}
+```
+
+The soonest event that has a poster becomes the big featured card; the rest list
+below it. Past events drop off on their own — the cutoff is computed in the browser
+after mount, because the site is statically generated and a build-time "today"
+would go stale. Posters go in `public/events/` at 4:5 (1080×1350 works well).
+
+### EDGE Teams (2026–2027)
+
+Listed in display order — the array order in `projects.ts` is what the site shows,
+and the first entry loads selected. Boldest work leads.
+
+| Project | Sector | Page | Deliverable |
+|---|---|---|---|
+| Project Lantern | Agriculture · Invasive species | `/projects/project-lantern` | Detect lanternflies early, predict where they spread |
+| World Model Benchmark | AI evaluation · World models | `/projects/world-model-benchmark` | Submit to the WACV 2027 workshop (due 11/23) |
+| HEARTBEAT Challenge | Audio AI · Conversational agents | `/projects/heartbeat-challenge` | Submit to the ICASSP 2027 challenge (due 12/11) |
+| Assembly Jarvis | Industrial AI · On-device multimodal | `/projects/assembly-jarvis` | Demo a working multimodal system in real time |
+| UMD AI Advisor | Applied RAG · Institutional knowledge | `/projects/umd-ai-advisor` | A deployed system 100 students use to get information quickly |
+
+Reorder the array to reorder the site.
+
+### Project pages
+
+Every project has its own page, generated at build time from `PROJECTS` by
+[`pages/projects/[slug].tsx`](pages/projects/%5Bslug%5D.tsx), plus a flat index at
+`/projects`. The shell is shared. The world is not.
+
+**These pages are for partners, not recruits.** `/projects` and the five pages
+under it are the showcase we point a company, a lab or a sponsor at — so they
+lead with sector, stage and what the work is aimed at, argue why it matters
+outside the club, and make exactly one ask: talk to us. The student intake lives
+on the home page instead. Concretely, that means these four fields on `Project`
+carry the partner framing:
+
+| Field | Is |
+|---|---|
+| `sector` | The field a partner would file this under. Leads the chip row, in the team's accent |
+| `stage` | Where the work actually is — Scoping, Building, Submitting, Deployed |
+| `target` | The external thing it is aimed at: a venue, a demo, a deployment |
+| `why` | Two or three sentences on why it matters to someone outside the club |
+
+There is **no skill level** anywhere in this data and no application form on
+these pages — a difficulty grade is a signal for someone deciding whether to
+join, which is not who is reading. `__tests__/projectPages.test.tsx` asserts it:
+if the recruiting funnel creeps back onto a project page, those tests fail. The
+one student-facing line is the footnote under the *Work with us* card, and it
+points at Discord.
+
+Each page is **built out of that team's artwork**. The hero is the picture, full
+bleed, graded to a palette sampled from the picture itself, with a motif alive
+inside it. One field drives all of it: **`theme`**, which sets a `data-team`
+attribute on the page.
+
+| Theme | Palette, taken from the art | What is alive in the picture |
+|---|---|---|
+| `lantern` | scarlet `#FF4133` + teal `#4ACBDA` | The swarm keeps moving — live lanternflies crawl across the painted ones in the same teal, flash the scarlet hindwings of the lit one, and scarlet blooms open where a sighting spreads |
+| `worldmodel` | sun `#F0CF9B` + deep blue `#7FB0D8` | Two orbits laid over the system in the painting, centred on its sun and matched to its tilt: a solid body on the true one, a hollow one on the prediction, turning at different rates so they come apart |
+| `heartbeat` | coral `#F5452B` + powder blue `#8FAEE4` | A reader sweeps the waveform that is already in the poster, and brackets close around the two stretches where it actually goes quiet |
+| `jarvis` | brass `#EDB869` + indigo `#6E89C8` | The assistant's own view: every box is locked onto a real object in that workshop — the arm, the housing, the stock, the gears — with a scanline and a reticle working the room |
+| `advisor` | brick `#DC6655` + olive `#CBBE7E` | A prerequisite chain routed across the mall toward McKeldin. Every stop sits on a real walkway, bench or step in the painting |
+
+The home-page dossier reads the same palette: each rail item carries its
+project's `data-team`, so the dot and the active marker are a swatch of that
+project's artwork rather than a traffic light.
+
+**How a motif stays registered to the art.** All five pieces of deck art are
+1400×787. `.scene__plate` is sized to exactly that aspect ratio and scaled to
+cover the hero, by hand in `cqw`/`cqh` rather than with `object-fit`, because the
+motif lives inside the plate and has to move with it. A motif can then draw in an
+SVG with `viewBox="0 0 1400 787"` — the artwork's own pixel space — and its
+coordinates land on whatever it is pointing at.
+
+Per-team framing knobs, all set beside the palette:
+
+| Token | Does |
+|---|---|
+| `--scene-x` / `--scene-y` | Where the plate is anchored, so the right part of the art is in frame |
+| `--scene-zoom` | Pushes in past cover, which frees up room to re-frame |
+| `--scene-lift` | Exposure on the art itself |
+| `--scrim-far` | How hard the far side is held back from the copy |
+| `--scrim-floor` | How hard the bottom edge goes down into the next section |
+
+**Adding or changing a motif:**
+
+1. Add the name to `ProjectTheme` in `projects.ts` and set it on the team.
+2. Add `[data-team='yourtheme'] { --accent: …; --accent-2: …; }` and the framing
+   tokens near the top of the *EDGE TEAM PAGES* block in `globals.css`. Sample the
+   colours out of the artwork rather than picking them — that is why the pages
+   look like their pictures.
+3. Add a branch to `ProjectMotif` in
+   [`components/projects/ProjectMotif.tsx`](components/projects/ProjectMotif.tsx)
+   and its CSS to the *PROJECT MOTIFS* block. To point at something in the art,
+   draw in `ART_BOX`.
+4. Pose it for `prefers-reduced-motion` in the block at the very end of
+   `globals.css` — see below.
+
+Motifs are decorative: `aria-hidden`, `pointer-events: none`, pure SVG and CSS, no
+canvas, no animation library, no image bytes, and no randomness, so the server and
+the client render identical markup. They carry no caption — the motif either
+reads as part of the picture or it is not working.
+
+> Avoid `mix-blend-mode` on anything full-bleed in a scene. A blend layer that
+> size makes the browser recomposite the whole hero on every frame of the motif
+> above it, which was enough to stall the compositor on the busiest artwork.
+> Plain alpha gets the same look.
+
+## Stack
+
+Next.js 15 (Pages Router) · React 18 · TypeScript (strict) · Jest + React Testing Library.
+
+```
+components/
+  Navigation.tsx   site nav
+  SiteFooter.tsx   shared footer (home + project pages)
+  projects/
+    ProjectMotif.tsx   the five ambient motifs
+pages/
+  index.tsx        the home page
+  projects/
+    index.tsx      the flat index of all five teams
+    [slug].tsx     one page per team, SSG from PROJECTS
+  carousel.tsx     component demo
+  bento.tsx        component demo
+  typography.tsx   type system spec
+  fonts.tsx        type specimens
+src/
+  content/         editable site copy
+  lib/dates.ts     event date helpers (no clock reads — "today" is passed in)
+  fonts.ts         next/font setup
+  styles/
+    globals.css    the entire design system
+public/projects/   EDGE team artwork
+public/events/     event posters
+```
+
+## Running it
+
+```bash
+npm install
+npm run dev        # http://localhost:3000
+```
+
+| Script | Purpose |
+|---|---|
+| `npm run dev` | Dev server with hot reload |
+| `npm run build` | Production build |
+| `npm start` | Serve the production build |
+| `npm run lint` | ESLint |
+| `npm test` | Jest |
+
+> If you run `npm run build` and then `npm run dev`, delete `.next/` in between —
+> the two share that directory and a stale production build breaks the dev server.
+
+## Accessibility
+
+- Semantic landmarks, real `<button>`/`<a>` elements, visible focus rings
+- The project selector is a proper ARIA tablist with `aria-selected` / `aria-controls`
+- Mobile menu closes on Escape, on click-outside, and on link activation
+- `prefers-reduced-motion` disables all transitions and animations. The motifs get
+  a second pass at the end of `globals.css`: a collapsed-to-0ms animation would park
+  a crawling fly off-screen, so their animations are switched off outright and each
+  motif is posed by hand instead — the personality stays, the motion goes
+- Decorative marks are `aria-hidden`; every image has a real `alt`
+
+## Intake state
+
+EDGE applications for the 2026–27 cohort are **closed**. The site reflects this in
+one place — flip `EDGE_APPLICATIONS_OPEN` in
+[`src/content/club.ts`](src/content/club.ts) to `true` when the next cycle opens and
+the Join section and "Inside EDGE" status pill switch back to a live link to the
+application form. The form URLs stay in `LINKS` either way.
+
+## Known gaps
+
+- **Tailwind is configured but not active.** `tailwind.config.ts` and the PostCSS
+  plugin are installed, but `globals.css` has never imported Tailwind, so utility
+  classes do nothing. The site is styled entirely by hand-written CSS. Either wire
+  Tailwind up or drop the dependency — right now it is dead weight.
+- `components/ProjectCard.tsx` is unused.
+- `components/BentoCard.tsx` optionally imports `framer-motion`, which is not a
+  dependency. It falls back to CSS transforms, but the build logs a warning.
+- The site has no live event calendar. "What's Next" is driven by the hand-edited
+  `EVENTS` array, not a feed.

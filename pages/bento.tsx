@@ -100,10 +100,10 @@ export default function BentoPage() {
   return (
     <>
       <Head>
-        <title>Bento Card Demo — BigThinkAI</title>
+        <title>Bento Card Demo · BigThinkAI</title>
       </Head>
       <main style={{ padding: '4rem', maxWidth: 1100, margin: '0 auto' }}>
-        <h1 className="h1-serif">Bento Cards — Motion & Variants</h1>
+        <h1 className="h1-serif">Bento Cards · Motion & Variants</h1>
         <p className="lead">Interactive demos of `BentoCard` with magnetic cursor tracking and visual variants. Toggle motion to test reduced-motion and performance behavior.</p>
 
         <section style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 20 }}>

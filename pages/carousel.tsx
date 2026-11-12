@@ -42,17 +42,20 @@ export default function CarouselDemo() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   return (
-    <div className="min-h-screen bg-background text-foreground film-grain">
+    <div className="page film-grain">
       <Navigation />
 
-      <main className="max-w-6xl mx-auto p-8 pt-24">
+      <main className="shell" style={{ paddingBlock: '8rem 5rem' }}>
         {/* Header */}
-        <section className="mb-12">
-          <h1 className="text-5xl font-serif font-bold leading-tight mb-4">Featured Initiatives</h1>
-          <p className="lead">
-            Explore the core programs that make BigThinkAI a hub for applied machine learning. Slide through to discover what excites you.
+        <div className="section-head">
+          <p className="kicker">Spec / Component</p>
+          <h1 className="h1-display">Carousel</h1>
+          <span className="hatch" aria-hidden="true" />
+          <p className="section-lede">
+            Demo of the <code>Carousel</code> component: auto-play, keyboard, touch, and
+            reduced-motion behavior.
           </p>
-        </section>
+        </div>
 
         {/* Carousel */}
         <Carousel
@@ -63,23 +66,19 @@ export default function CarouselDemo() {
           onSlideChange={(index) => setCurrentSlide(index)}
         >
           {features.map((feature) => (
-            <div
-              key={feature.title}
-              className={`w-full h-full flex flex-col items-center justify-center px-8 py-16 text-center bg-gradient-to-br ${feature.color} to-transparent rounded-2xl`}
-            >
-              <h2 className="text-4xl font-serif font-bold mb-2">{feature.title}</h2>
-              <p className="text-lg font-medium text-primary mb-4">{feature.subtitle}</p>
-              <p className="text-base text-muted max-w-md leading-relaxed">{feature.description}</p>
-              <button className="btn-primary mt-6">Learn More</button>
+            <div key={feature.title} className="carousel-card">
+              <p className="carousel-card__subtitle">{feature.subtitle}</p>
+              <h2 className="carousel-card__title">{feature.title}</h2>
+              <p className="carousel-card__desc">{feature.description}</p>
             </div>
           ))}
         </Carousel>
 
         {/* Info Section */}
-        <section className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="card">
-            <h3 className="h2-serif mb-4">Carousel Features</h3>
-            <ul className="space-y-2 text-sm">
+        <section className="pillars" style={{ marginTop: '3rem' }}>
+          <div className="pillar">
+            <h3 className="pillar__name">Features</h3>
+            <ul className="skills">
               <li>Auto-play with pause-on-hover</li>
               <li>Keyboard navigation (← →)</li>
               <li>Touch/swipe support for mobile</li>
@@ -89,42 +88,42 @@ export default function CarouselDemo() {
             </ul>
           </div>
 
-          <div className="card">
-            <h3 className="h2-serif mb-4">Current Slide</h3>
-            <p className="mb-4">
-              You're viewing slide <strong>{currentSlide + 1}</strong> of <strong>{features.length}</strong>
+          <div className="pillar">
+            <h3 className="pillar__name">Current Slide</h3>
+            <p>
+              You&apos;re viewing slide <strong>{currentSlide + 1}</strong> of <strong>{features.length}</strong>
             </p>
-            <div className="space-y-2">
+            <div>
               <div className="font-semibold">{features[currentSlide]?.title}</div>
-              <p className="text-sm text-muted">{features[currentSlide]?.subtitle}</p>
+              <p className="pillar__desc">{features[currentSlide]?.subtitle}</p>
             </div>
           </div>
         </section>
 
         {/* Instructions */}
-        <section className="mt-12 card bg-muted/40">
-          <h3 className="h2-serif mb-4">How to Interact</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+        <section className="card" style={{ marginTop: '2rem' }}>
+          <h3 className="h2-display">How to Interact</h3>
+          <div className="pillars" style={{ border: 0, background: 'transparent' }}>
             <div>
-              <strong className="block mb-2">Mouse</strong>
-              <p className="text-muted">Use the left/right arrow buttons or click the dots below to navigate. Hover to pause auto-play.</p>
+              <strong className="pillar__index">Mouse</strong>
+              <p className="pillar__desc">Use the left/right arrow buttons or click the dots below to navigate. Hover to pause auto-play.</p>
             </div>
             <div>
-              <strong className="block mb-2">Keyboard</strong>
-              <p className="text-muted">Press Arrow Left/Right keys to navigate when the carousel has focus.</p>
+              <strong className="pillar__index">Keyboard</strong>
+              <p className="pillar__desc">Press Arrow Left/Right keys to navigate when the carousel has focus.</p>
             </div>
             <div>
-              <strong className="block mb-2">Touch</strong>
-              <p className="text-muted">Swipe left or right on your mobile device to slide between initiatives.</p>
+              <strong className="pillar__index">Touch</strong>
+              <p className="pillar__desc">Swipe left or right on your mobile device to slide between initiatives.</p>
             </div>
           </div>
         </section>
 
         {/* Code Example */}
-        <section className="mt-12">
-          <h3 className="h2-serif mb-4">Usage Example</h3>
-          <div className="card bg-muted/40 font-mono text-sm overflow-x-auto">
-            <pre className="p-4">{`import Carousel from '@/components/Carousel';
+        <section style={{ marginTop: '2rem' }}>
+          <h3 className="h2-display">Usage Example</h3>
+          <div className="card" style={{ overflowX: 'auto' }}>
+            <pre style={{ margin: 0, fontSize: '0.8rem' }}>{`import Carousel from '@/components/Carousel';
 
 export default function Page() {
   return (

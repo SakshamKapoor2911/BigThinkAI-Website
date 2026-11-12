@@ -1,47 +1,36 @@
-/* Centralized font imports using next/font
+/* Centralized font loading via next/font.
 
-- Newsreader via Google (serif)
-- Inter used as a high-quality substitute for Geist Sans (sans)
-- JetBrains Mono used as a modern monospace substitute for Geist Mono
+   The type system mirrors the BigThinkAI deck:
+   - Josefin Sans (thin, wide-tracked, uppercase) ....... display headings
+   - Oswald (bold condensed) ........................... labels, kickers, buttons
+   - JetBrains Mono .................................... body copy & technical text
 
-Replace `inter`/`jetbrainsMono` with local Geist fonts if you have licensed font files.
+   All three are variable fonts, so no `weight` array is needed — the full
+   range is available and next/font self-hosts them (no layout shift, no
+   external request at runtime).
 */
 
-import { Newsreader } from 'next/font/google'
-import { Inter } from 'next/font/google'
-import { JetBrains_Mono } from 'next/font/google'
+import { Josefin_Sans, Oswald, JetBrains_Mono } from 'next/font/google'
 
-export const newsreader = Newsreader({
+// Display — hero wordmark, section titles, project names. Always uppercase,
+// always widely tracked. Thin weights (200/300) carry the brand.
+export const josefin = Josefin_Sans({
   subsets: ['latin'],
-  variable: '--font-serif',
+  variable: '--font-display',
   display: 'swap',
-  weight: ['400', '600', '700'],
 })
 
-// Inter is used here as a high-quality sans substitute for Geist Sans.
-export const inter = Inter({
+// Label — kickers, skill-level tags, buttons, nav. Condensed and loud.
+export const oswald = Oswald({
   subsets: ['latin'],
-  variable: '--font-sans',
+  variable: '--font-label',
   display: 'swap',
-  weight: ['300', '400', '600', '700'],
 })
 
+// Body — descriptions, mission copy, metadata. The deck sets everything
+// technical in mono; so does the site.
 export const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
   display: 'swap',
-  weight: ['400', '700'],
 })
-
-// Local Geist sample placeholder (optional):
-// If you obtain Geist Sans / Geist Mono files, drop them in `public/fonts` and uncomment below.
-/*
-export const geistSans = localFont({
-  src: [
-    { path: '../public/fonts/GeistSans-Regular.woff2', weight: '400', style: 'normal' },
-    { path: '../public/fonts/GeistSans-Medium.woff2', weight: '600', style: 'normal' },
-  ],
-  variable: '--font-sans',
-  display: 'swap',
-})
-*/

@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heartbeat Replay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@100..400&family=Oswald:wght@400..700&family=JetBrains+Mono:wght@300..600&display=swap" rel="stylesheet">
+<style>
+  /* BigThinkAI "Frontier" system: near-black ground, thin wide-tracked display caps,
+     condensed labels, mono body, steel blue, sharp edges, registration marks. */
+  :root {
+    color-scheme: dark;
+    --ink: #08090B; --ink-raised: #0E1014; --ink-card: #15181E; --ink-lift: #1C2029;
+    --line: rgba(255,255,255,.11); --line-soft: rgba(255,255,255,.055); --line-hard: rgba(255,255,255,.22);
+    --text: #ECEEF2; --text-dim: #99A2B0; --text-faint: #5E6673;
+    --steel: #5B82B8; --steel-bright: #8CB2E4; --steel-rgb: 91,130,184;
+    --amber: #F2A33C;
+    --display: "Josefin Sans", system-ui, sans-serif;
+    --label: "Oswald", "Arial Narrow", system-ui, sans-serif;
+    --mono: "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
+    --radius: 2px; --ease: cubic-bezier(.22,.85,.3,1); --dur: 420ms;
+    --gutter: clamp(1rem, 4vw, 3rem);
+
+    /* outcome colours, tuned for the dark ground */
+    --ok: #6FD86A; --wrong: #E2C548; --early: #F2933C; --false: #E8534A; --dup: #C77DFF; --missed: #7D8796;
+    --speak: var(--steel); --silent: rgba(255,255,255,.06);
+    /* aliases the replay script still references */
+    --accent: var(--steel); --muted: var(--text-dim); --panel: var(--ink-card);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--ink); color: var(--text); font: 13.5px/1.7 var(--mono);
+         -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  body::before { content: ""; position: fixed; inset: -10%; z-index: 0; pointer-events: none;
+    background-image:
+      repeating-linear-gradient(74deg, rgba(255,255,255,.021) 0 1px, transparent 1px 3px, rgba(255,255,255,.009) 3px 4px, transparent 4px 11px),
+      repeating-linear-gradient(74deg, rgba(255,255,255,.015) 0 1px, transparent 1px 37px);
+    }
+  body::after { content: ""; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 0%, rgba(var(--steel-rgb),.10), transparent 55%),
+                radial-gradient(ellipse at 50% 120%, rgba(0,0,0,.6), transparent 60%); }
+  .page { position: relative; z-index: 2; }
+  ::selection { background: rgba(var(--steel-rgb),.35); color: #fff; }
+  :focus-visible { outline: 2px solid var(--steel-bright); outline-offset: 2px; }
+  code { font-family: var(--mono); font-size: .92em; background: rgba(255,255,255,.06); border: 1px solid var(--line-soft); padding: 0 5px; border-radius: var(--radius); color: var(--steel-bright); }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .shell { max-width: 1440px; margin-inline: auto; padding-inline: var(--gutter); }
+
+  /* ── type primitives ── */
+  .kicker { font: 500 .72rem/1 var(--label); text-transform: uppercase; letter-spacing: .26em; color: var(--steel);
+            display: flex; align-items: center; gap: .7rem; margin: 0 0 1.1rem; }
+  .kicker::before { content: ""; width: 1.6rem; height: 1px; background: var(--steel); opacity: .65; }
+  .hatch { width: 112px; height: 11px; border: 1px solid var(--line-hard); opacity: .55;
+           background-image: repeating-linear-gradient(-52deg, var(--text) 0 1.5px, transparent 1.5px 6px); }
+  .marks { position: relative; }
+  .marks::before, .marks::after { content: ""; position: absolute; width: 13px; height: 13px; pointer-events: none; border: solid var(--line-hard); }
+  .marks::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+  .marks::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+  .crosshair { width: 15px; height: 15px; flex: none; border: 1px solid currentColor; border-radius: 50%; position: relative; opacity: .8; }
+  .crosshair::before, .crosshair::after { content: ""; position: absolute; background: currentColor; }
+  .crosshair::before { left: 50%; top: 2px; bottom: 2px; width: 1px; transform: translateX(-50%); }
+  .crosshair::after { top: 50%; left: 2px; right: 2px; height: 1px; transform: translateY(-50%); }
+
+  /* ── nav ── */
+  .site-nav { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+              padding: .85rem var(--gutter); background: rgba(8,9,11,.72); backdrop-filter: blur(18px) saturate(140%);
+              -webkit-backdrop-filter: blur(18px) saturate(140%); border-bottom: 1px solid var(--line-soft); }
+  .brand { font: 300 1rem/1 var(--display); text-transform: uppercase; letter-spacing: .2em; white-space: nowrap; color: var(--text); }
+  .brand b { font-weight: 300; color: var(--steel); }
+  .nav-sep { width: 1px; height: 18px; background: var(--line-hard); }
+  .nav-sub { font: 500 .74rem/1 var(--label); text-transform: uppercase; letter-spacing: .16em; color: var(--text-dim); }
+  .nav-links { display: flex; gap: .2rem; margin-left: auto; }
+  .nav-links a { font: 500 .74rem/1 var(--label); text-transform: uppercase; letter-spacing: .14em; color: var(--text-dim);
+                 text-decoration: none; padding: .55rem .75rem; border-radius: var(--radius); transition: color var(--dur) var(--ease), background var(--dur) var(--ease); }
+  .nav-links a:hover { color: var(--text); background: rgba(255,255,255,.05); }
+  .replay-badge { display: flex; align-items: center; gap: .6rem; font: 600 .7rem/1 var(--label); text-transform: uppercase; letter-spacing: .16em;
+                  color: var(--amber); border: 1px solid rgba(242,163,60,.45); background: rgba(242,163,60,.07); padding: .6rem .9rem; border-radius: var(--radius); white-space: nowrap; }
+  .replay-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 10px var(--amber); animation: blink 2.4s var(--ease) infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+
+  /* ── hero ── */
+  .hero { padding-block: clamp(3.5rem, 9vw, 7rem) clamp(2.5rem, 5vw, 4rem); }
+  .hero-frame { padding: clamp(1.8rem, 5vw, 3.6rem) clamp(1.2rem, 4vw, 3rem); border: 1px solid var(--line-soft); background: rgba(14,16,20,.35); }
+  .wordmark { font: 200 clamp(2.4rem, 8.2vw, 7.2rem)/.92 var(--display); text-transform: uppercase; letter-spacing: .085em; margin: 0; }
+  .wordmark span { color: var(--steel); }
+  .tagline { display: flex; align-items: center; gap: 1rem; margin-top: 1.4rem; color: var(--steel); flex-wrap: wrap; }
+  .tagline-text { font: 700 clamp(.95rem, 2.2vw, 1.5rem)/1 var(--label); text-transform: uppercase; letter-spacing: .2em; }
+  .hero-row { display: flex; gap: 2.5rem; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; margin-top: 2.2rem; }
+  .notice { max-width: 82ch; color: var(--text-dim); font-size: .86rem; line-height: 1.85; margin: 0; }
+  .notice b { color: var(--text); font-weight: 500; }
+  .hero-cta { display: flex; gap: .7rem; flex-wrap: wrap; }
+  .btn { font: 600 .78rem/1 var(--label); text-transform: uppercase; letter-spacing: .15em; text-decoration: none; display: inline-flex; align-items: center; gap: .65rem;
+         padding: .95rem 1.5rem; border-radius: var(--radius); border: 1px solid var(--line-hard); color: var(--text); background: transparent;
+         transition: all var(--dur) var(--ease); }
+  .btn:hover { border-color: var(--steel); color: var(--steel-bright); background: rgba(var(--steel-rgb),.08); transform: translateY(-2px); }
+  .btn.primary { background: var(--steel); border-color: var(--steel); color: #05070A; }
+  .btn.primary:hover { background: var(--steel-bright); border-color: var(--steel-bright); color: #05070A; }
+  .btn .arrow { transition: transform var(--dur) var(--ease); }
+  .btn:hover .arrow { transform: translateX(4px); }
+
+  /* ── sections ── */
+  .section { padding-block: clamp(2.2rem, 5vw, 3.6rem); border-top: 1px solid var(--line-soft); }
+  .section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.6rem; }
+  .section-title { font: 200 clamp(1.7rem, 4.2vw, 2.8rem)/1 var(--display); text-transform: uppercase; letter-spacing: .085em; margin: 0; }
+
+  /* ── scoreboard ── */
+  .metrics { display: grid; grid-template-columns: minmax(400px, 2fr) repeat(3, minmax(140px, 1fr)); gap: 1px; background: var(--line-soft); border: 1px solid var(--line-soft); }
+  .card { background: var(--ink-raised); padding: 1.4rem 1.4rem 1.3rem; position: relative; transition: background var(--dur) var(--ease); }
+  .card:hover { background: var(--ink-card); }
+  .card::before { content: ""; position: absolute; top: 0; left: 0; width: 13px; height: 13px; border: solid var(--line-hard); border-width: 1px 0 0 1px; }
+  .card h3 { margin: 0 0 1rem; font: 500 .68rem/1.3 var(--label); text-transform: uppercase; letter-spacing: .2em; color: var(--text-dim); display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  .unofficial { font: 600 .6rem/1 var(--label); letter-spacing: .16em; color: var(--false); border: 1px solid rgba(232,83,74,.5); padding: .3rem .45rem; border-radius: var(--radius); }
+  .prf { display: flex; gap: clamp(1rem, 2.4vw, 2.2rem); align-items: baseline; }
+  .prf .big { font: 200 clamp(2.2rem, 3.6vw, 3.3rem)/1 var(--display); letter-spacing: .02em; }
+  .prf .lbl { font: 500 .66rem/1 var(--label); text-transform: uppercase; letter-spacing: .2em; color: var(--text-faint); margin-top: .5rem; }
+  .card .val { font: 200 clamp(1.9rem, 3vw, 2.6rem)/1 var(--display); letter-spacing: .02em; }
+  .card .small { font-size: .74rem; color: var(--text-dim); margin-top: .7rem; line-height: 1.6; }
+  .protocol { margin-top: 1rem; font-size: .76rem; color: var(--text-faint); line-height: 1.8; }
+  .protocol b { color: var(--text-dim); font-weight: 500; }
+  .protocol details { display: inline; }
+  .protocol summary { display: inline; cursor: pointer; color: var(--steel-bright); }
+  .breakdown { margin-top: .9rem; border-collapse: collapse; font-size: .76rem; background: var(--ink-raised); }
+  .breakdown td, .breakdown th { border: 1px solid var(--line); padding: .35rem .8rem; text-align: right; }
+  .breakdown th { font: 500 .66rem/1 var(--label); text-transform: uppercase; letter-spacing: .16em; color: var(--text-dim); }
+  .breakdown th:first-child, .breakdown td:first-child { text-align: left; }
+
+  /* ── workbench ── */
+  .layout { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 1.6rem; align-items: start; }
+  aside { position: sticky; top: 74px; max-height: calc(100vh - 90px); overflow: auto; display: flex; flex-direction: column; gap: 1.6rem; padding-right: 4px;
+          scrollbar-width: thin; scrollbar-color: var(--line-hard) transparent; }
+  .side-title { font: 500 .68rem/1 var(--label); text-transform: uppercase; letter-spacing: .22em; color: var(--steel); margin: 0 0 .8rem; display: flex; align-items: center; gap: .6rem; }
+  .side-title::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+  .tour { display: flex; flex-direction: column; gap: 1px; background: var(--line-soft); border: 1px solid var(--line-soft); }
+  .tour-card { text-align: left; border: 0; background: var(--ink-raised); padding: .85rem 1rem .85rem 1.1rem; position: relative; transition: background var(--dur) var(--ease); }
+  .tour-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--missed); }
+  .tour-card.success::before { background: var(--ok); } .tour-card.failure::before { background: var(--false); }
+  .tour-card:hover { background: var(--ink-card); }
+  .tour-card.active { background: var(--ink-lift); box-shadow: inset 0 0 0 1px rgba(var(--steel-rgb),.55); }
+  .tour-card .k { font: 600 .62rem/1 var(--label); letter-spacing: .22em; text-transform: uppercase; }
+  .tour-card.success .k { color: var(--ok); } .tour-card.failure .k { color: var(--false); }
+  .tour-card .t { font: 400 .95rem/1.3 var(--display); letter-spacing: .03em; margin: .45rem 0 .3rem; color: var(--text); }
+  .tour-card .id { font-size: .7rem; color: var(--text-faint); }
+
+  .filters { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .7rem; }
+  .chip { border: 1px solid var(--line); background: transparent; border-radius: var(--radius); padding: .35rem .6rem; font: 500 .68rem/1 var(--label); text-transform: uppercase; letter-spacing: .12em; color: var(--text-dim); transition: all var(--dur) var(--ease); }
+  .chip:hover { border-color: var(--line-hard); color: var(--text); }
+  .chip.on { background: var(--steel); border-color: var(--steel); color: #05070A; }
+  .search { width: 100%; padding: .65rem .8rem; border: 1px solid var(--line); background: var(--ink-raised); color: var(--text); border-radius: var(--radius); margin-bottom: .7rem; font: .8rem var(--mono); }
+  .search::placeholder { color: var(--text-faint); }
+  .search:focus { outline: none; border-color: var(--steel); }
+  .list { display: flex; flex-direction: column; gap: 1px; background: var(--line-soft); border: 1px solid var(--line-soft); }
+  .item { text-align: left; background: var(--ink-raised); border: 0; padding: .65rem .85rem; transition: background var(--dur) var(--ease); }
+  .item:hover { background: var(--ink-card); }
+  .item.active { background: var(--ink-lift); box-shadow: inset 2px 0 0 var(--steel); }
+  .item .row1 { display: flex; justify-content: space-between; gap: .5rem; font-size: .76rem; color: var(--text); }
+  .item .ins { color: var(--text-faint); font-size: .72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: .15rem; }
+  .pills { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
+  .pill { font: 600 .6rem/1.5 var(--label); letter-spacing: .08em; text-transform: uppercase; border-radius: var(--radius); padding: 0 .35rem; color: #05070A; }
+
+  main { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+  .head { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+  .head h2 { margin: 0 .8rem 0 0; font: 200 clamp(1.4rem, 2.6vw, 2rem)/1.1 var(--display); text-transform: uppercase; letter-spacing: .08em; width: 100%; }
+  .tag { font: 500 .66rem/1 var(--label); text-transform: uppercase; letter-spacing: .14em; border: 1px solid var(--line); border-radius: var(--radius); padding: .4rem .55rem; color: var(--text-dim); }
+  .instruction { background: var(--ink-raised); border: 1px solid var(--line); padding: 1.3rem 1.5rem; position: relative; }
+  .instruction::before { content: ""; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 2px; background: var(--steel); }
+  .instruction .lbl { font: 500 .66rem/1 var(--label); text-transform: uppercase; letter-spacing: .2em; color: var(--steel); }
+  .instruction .q { font: 300 clamp(1.15rem, 2vw, 1.55rem)/1.35 var(--display); letter-spacing: .02em; margin-top: .65rem; color: var(--text); }
+  .story { font-size: .8rem; color: var(--text-dim); border: 1px dashed var(--line-hard); padding: .85rem 1.1rem; line-height: 1.8; }
+  .story b { font: 600 .68rem/1 var(--label); text-transform: uppercase; letter-spacing: .16em; color: var(--text); margin-right: .3rem; }
+
+  .player { background: var(--ink-raised); border: 1px solid var(--line); padding: 1.2rem 1.4rem 1.3rem; display: flex; flex-direction: column; gap: 1rem; }
+  .controls { display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; }
+  .controls audio { flex: 1 1 380px; min-width: 260px; height: 38px; }
+  .controls label { font: 500 .68rem/1 var(--label); text-transform: uppercase; letter-spacing: .14em; color: var(--text-dim); display: flex; align-items: center; gap: .45rem; }
+  .controls input[type=checkbox] { accent-color: var(--steel); width: 14px; height: 14px; }
+  .controls select { background: var(--ink-card); color: var(--text); border: 1px solid var(--line-hard); border-radius: var(--radius); padding: .25rem .35rem; font: .75rem var(--mono); }
+  .now { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line-soft); border: 1px solid var(--line-soft); }
+  .now .box { background: var(--ink); padding: .8rem 1rem; min-height: 72px; }
+  .now .lbl { font: 500 .64rem/1 var(--label); text-transform: uppercase; letter-spacing: .18em; color: var(--text-faint); display: flex; justify-content: space-between; gap: .5rem; }
+  .now .lbl span:last-child { color: var(--steel-bright); font-family: var(--mono); letter-spacing: .04em; }
+  .now .state { margin-top: .5rem; font-size: .85rem; }
+  .now .state.listen { color: var(--text-dim); }
+  .now .state.speak { color: var(--steel-bright); }
+  #last { margin-top: .5rem; font-size: .82rem; color: var(--text); }
+
+  .timeline { position: relative; user-select: none; padding-top: .2rem; }
+  .lane { position: relative; height: 36px; background: var(--ink); border: 1px solid var(--line-soft); margin-bottom: .55rem; cursor: pointer; }
+  .lane-label { font: 500 .62rem/1 var(--label); color: var(--text-faint); margin: .7rem 0 .4rem; text-transform: uppercase; letter-spacing: .18em; }
+  .chunkstrip { height: 14px; display: flex; overflow: hidden; cursor: pointer; border: 1px solid var(--line-soft); }
+  .chunkstrip div { flex: 1; border-right: 1px solid rgba(8,9,11,.85); }
+  .resp { position: absolute; top: 5px; height: 24px; border-radius: var(--radius); min-width: 8px; color: #05070A; font-size: .68rem; font-weight: 500; padding: 3px 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; box-shadow: 0 0 14px rgba(0,0,0,.4); }
+  .window { position: absolute; top: 3px; height: 28px; background: rgba(var(--steel-rgb),.12); border: 1px dashed rgba(var(--steel-rgb),.6); }
+  .gt { position: absolute; top: 9px; width: 15px; height: 15px; transform: translateX(-7.5px) rotate(45deg); border: 2px solid var(--ink); box-shadow: 0 0 0 1px rgba(255,255,255,.25); }
+  .axis { position: relative; height: 18px; font-size: .64rem; color: var(--text-faint); }
+  .axis span { position: absolute; transform: translateX(-50%); }
+  .playhead { position: absolute; top: 0; bottom: 18px; width: 1px; background: var(--text); box-shadow: 0 0 10px rgba(255,255,255,.7); pointer-events: none; z-index: 3; }
+  .playhead::before { content: ""; position: absolute; top: -3px; left: -4px; width: 9px; height: 9px; background: var(--text); transform: rotate(45deg); }
+  .silence { position: absolute; top: 0; bottom: 18px; pointer-events: none; z-index: 2; border-left: 1px solid var(--line-hard); border-right: 1px solid var(--line-hard);
+             background: repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 1.5px, transparent 1.5px 7px); }
+  .silence span { position: absolute; top: 2px; left: 5px; font: 500 .58rem/1.2 var(--label); text-transform: uppercase; letter-spacing: .14em; color: var(--text-dim); white-space: nowrap; }
+  .silence-hint { color: var(--text-faint); font-size: .74rem; }
+  .future { opacity: .14; }
+  .cue { position: absolute; top: 14px; bottom: 18px; width: 0; border-left: 1px dashed var(--amber); pointer-events: none; z-index: 2; }
+  .cue span { position: absolute; top: -14px; left: 5px; font: 600 .6rem/1.2 var(--label); text-transform: uppercase; letter-spacing: .12em; color: var(--amber); white-space: nowrap; }
+  .cue.flip span { left: auto; right: 5px; }
+  .who.audio { color: var(--amber); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; font: 500 .64rem/1.4 var(--label); text-transform: uppercase; letter-spacing: .12em; color: var(--text-dim);
+            border-top: 1px solid var(--line-soft); padding-top: .9rem; }
+  .legend i { display: inline-block; width: 10px; height: 10px; margin-right: .45rem; vertical-align: -1px; }
+
+  table.events { width: 100%; border-collapse: collapse; background: var(--ink-raised); border: 1px solid var(--line); font-size: .78rem; }
+  table.events th { text-align: left; font: 500 .64rem/1 var(--label); text-transform: uppercase; letter-spacing: .18em; color: var(--text-faint); background: var(--ink); padding: .8rem .9rem; border-bottom: 1px solid var(--line); }
+  table.events td { padding: .75rem .9rem; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  table.events td:first-child { color: var(--steel-bright); white-space: nowrap; }
+  table.events tr { cursor: pointer; transition: background var(--dur) var(--ease); }
+  table.events tr:hover td { background: var(--ink-card); }
+  table.events tr.current td { background: rgba(var(--steel-rgb),.12); }
+  .who { font: 600 .66rem/1.6 var(--label); text-transform: uppercase; letter-spacing: .14em; white-space: nowrap; }
+  .who.model { color: var(--steel-bright); } .who.truth { color: #6FD3C0; }
+  .badge { display: inline-block; font: 600 .6rem/1.7 var(--label); letter-spacing: .12em; text-transform: uppercase; color: #05070A; border-radius: var(--radius); padding: 0 .45rem; white-space: nowrap; }
+  .detail { font-size: .74rem; color: var(--text-dim); }
+  .hidden-text { color: var(--text-faint); font-style: italic; }
+
+  footer { padding-block: 1.5rem 3rem; font-size: .76rem; color: var(--text-dim); }
+  footer details { background: var(--ink-raised); border: 1px solid var(--line); padding: 1rem 1.3rem; }
+  footer summary { cursor: pointer; font: 500 .7rem/1 var(--label); text-transform: uppercase; letter-spacing: .18em; color: var(--text); }
+  footer p { line-height: 1.85; }
+  .colophon { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid var(--line-soft);
+              font: 500 .64rem/1 var(--label); text-transform: uppercase; letter-spacing: .2em; color: var(--text-faint); }
+  .colophon b { color: var(--steel); font-weight: 500; }
+  .err { margin: 80px auto; max-width: 720px; background: var(--ink-raised); border: 1px solid rgba(232,83,74,.5); padding: 24px; color: var(--text); font-family: var(--mono); }
+
+  @media (max-width: 1180px) { .metrics { grid-template-columns: 1fr 1fr; } .metrics .card:first-child { grid-column: 1 / -1; } }
+  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } aside { position: static; max-height: none; } .nav-links { display: none; } }
+  @media (max-width: 620px) { .metrics { grid-template-columns: 1fr; } .now { grid-template-columns: 1fr; } .nav-sep, .nav-sub { display: none; } .replay-badge { margin-left: auto; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+<nav class="site-nav">
+  <span class="brand"><b>Big</b> Think AI</span>
+  <span class="nav-sep"></span>
+  <span class="nav-sub">Heartbeat · Track II</span>
+  <div class="nav-links"><a href="#scoreboard">Scoreboard</a><a href="#replay">Replay</a></div>
+  <div class="replay-badge" title="Nothing on this page is computed live"><span class="dot"></span>Replay · no live inference</div>
+</nav>
+
+<header class="hero shell">
+  <div class="hero-frame marks">
+    <p class="kicker">ICASSP 2027 · Heartbeat Challenge</p>
+    <h1 class="wordmark">Proactive<br><span>Listening</span></h1>
+    <div class="tagline"><span class="crosshair"></span><span class="tagline-text">Track II · Audio only · Venus baseline</span></div>
+    <div class="hero-row">
+      <p class="notice" id="notice">Loading saved run…</p>
+      <div class="hero-cta">
+        <a class="btn primary" href="#replay">Start the replay <span class="arrow">→</span></a>
+        <a class="btn" href="#scoreboard">See the scores</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="section shell" id="scoreboard">
+  <div class="section-head">
+    <div><p class="kicker">01 / Scoreboard</p><h2 class="section-title">How it scored</h2></div>
+    <div class="hatch"></div>
+  </div>
+  <div class="metrics" id="metrics"></div>
+  <div class="protocol" id="protocol"></div>
+</section>
+
+<section class="section shell" id="replay">
+  <div class="section-head">
+    <div><p class="kicker">02 / Replay</p><h2 class="section-title">Listen along</h2></div>
+    <div class="hatch"></div>
+  </div>
+  <div class="layout">
+    <aside>
+      <div>
+        <div class="side-title">Guided examples</div>
+        <div class="tour" id="tour"></div>
+      </div>
+      <div>
+        <div class="side-title">All recordings</div>
+        <div class="filters" id="filters"></div>
+        <input class="search" id="search" placeholder="Search id or instruction…">
+        <div class="list" id="list"></div>
+      </div>
+    </aside>
+    <main id="main"></main>
+  </div>
+</section>
+
+<footer class="shell">
+  <div class="colophon"><span><b>Big</b> Think AI · Heartbeat research</span><span>Space = play / pause</span></div>
+</footer>
+</div>
+<script>
+"use strict";
+const STATUS = {
+  matched:            { label: "Correct",           color: "var(--ok)",     help: "Inside the ±3 s window and judged correct" },
+  wrong_content:      { label: "Wrong answer",      color: "var(--wrong)",  help: "Inside the time window, but the judge rejected the content" },
+  early_activation:   { label: "Too early",         color: "var(--early)",  help: "Spoke before the first target event could have happened" },
+  false_activation:   { label: "False alarm",       color: "var(--false)",  help: "No target event within ±3 s" },
+  duplicate:          { label: "Duplicate",         color: "var(--dup)",    help: "Repeats an event that was already matched" },
+  ref_matched:        { label: "Caught",            color: "var(--ok)",     help: "A correct response arrived within the window" },
+  ref_missed:         { label: "Missed",            color: "var(--missed)", help: "No response near this event" },
+  ref_content_wrong_in_window: { label: "Wrong answer", color: "var(--wrong)", help: "A response arrived in time but with the wrong content" },
+};
+const refKey = s => "ref_" + s;
+const fmt = (x, d = 3) => (x == null ? "–" : Number(x).toFixed(d));
+const fmtT = t => `${Number(t).toFixed(1)} s`;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const $ = id => document.getElementById(id);
+
+let DATA, current = null, playAlong = false, filter = "all", query = "";
+
+const FILTERS = [
+  ["all", "All", () => true],
+  ["matched", "Correct", s => s.responses.some(r => r.status === "matched")],
+  ["early", "Too early", s => s.responses.some(r => r.status === "early_activation")],
+  ["false", "False alarm", s => s.responses.some(r => r.status === "false_activation" || r.status === "duplicate")],
+  ["wrong", "Wrong answer", s => s.responses.some(r => r.status === "wrong_content")],
+  ["missed", "Missed", s => s.references.some(r => r.status === "missed")],
+  ["silent", "Silent", s => s.responses.length === 0],
+];
+
+function counts(s) {
+  const c = {};
+  for (const r of s.responses) c[r.status] = (c[r.status] || 0) + 1;
+  for (const r of s.references) c[refKey(r.status)] = (c[refKey(r.status)] || 0) + 1;
+  return c;
+}
+
+function renderHeader() {
+  const run = DATA.run, sys = run.system || {};
+  const created = run.created ? run.created.replace("T", " ").slice(0, 16) : "unknown date";
+  $("notice").innerHTML =
+    `Can an AI listen to audio and speak up at the right moment? ` +
+    `This is a <b>saved run</b> of the Venus model on ${run.num_samples} clips. Nothing runs live.`;
+
+  const pj = DATA.primary_judge, m = DATA.metrics[pj].overall, j = m.joint;
+  const lex = DATA.metrics.lexical ? DATA.metrics.lexical.overall.joint.f1 : null;
+  const early = DATA.samples.reduce((n, s) => n + s.responses.filter(r => r.status === "early_activation").length, 0);
+  const judge = DATA.metrics[pj].judge || {};
+  $("metrics").innerHTML = `
+    <div class="card">
+      <h3>Overall score <span class="unofficial">Unofficial</span></h3>
+      <div class="prf">
+        <div><div class="big">${fmt(j.precision, 2)}</div><div class="lbl">Precision</div></div>
+        <div><div class="big">${fmt(j.recall, 2)}</div><div class="lbl">Recall</div></div>
+        <div><div class="big" style="color:var(--accent)">${fmt(j.f1, 2)}</div><div class="lbl">F1</div></div>
+      </div>
+      <div class="small">${j.matched} of ${j.responses} answers correct · ${j.references} events to catch</div>
+    </div>
+    <div class="card"><h3>Timing only</h3><div class="val">${fmt(m.timing_only.f1, 2)}</div><div class="small">Spoke at the right time</div></div>
+    <div class="card"><h3>False alarms</h3><div class="val" style="color:var(--false)">${m.errors.false_activations}</div><div class="small">${early} too early</div></div>
+    <div class="card"><h3>Missed</h3><div class="val" style="color:var(--missed)">${m.errors.missed_references}</div><div class="small">of ${j.references} events</div></div>`;
+
+  const p = DATA.metrics[pj].protocol || {};
+  const rows = (group) => Object.entries(DATA.metrics[pj].by[group] || {}).map(([k, v]) =>
+    `<tr><td>${esc(k)}</td><td>${v.samples}</td><td>${fmt(v.joint.precision)}</td><td>${fmt(v.joint.recall)}</td><td><b>${fmt(v.joint.f1)}</b></td><td>${fmt(v.timing_only.f1)}</td></tr>`).join("");
+  $("protocol").innerHTML =
+    `<details><summary>How it's scored</summary><p>An answer counts if it lands within ±${p.tolerance_after} s of an event and an LLM judge accepts it. Not the official challenge score.</p>
+      <table class="breakdown"><tr><th>Group</th><th>Samples</th><th>P</th><th>R</th><th>F1</th><th>Timing F1</th></tr>
+      ${rows("level")}${rows("audio_type")}</table></details>`;
+
+}
+
+function renderTour() {
+  $("tour").innerHTML = DATA.showcase.map(t => `
+    <button class="tour-card ${esc(t.kind)}" data-id="${esc(t.id)}">
+      <div class="k">${t.kind === "success" ? "Success" : "Failure"}</div>
+      <div class="t">${esc(t.title)}</div>
+    </button>`).join("");
+  $("tour").querySelectorAll("button").forEach(b => b.onclick = () => select(b.dataset.id));
+}
+
+function renderFilters() {
+  $("filters").innerHTML = FILTERS.map(([k, label, fn]) =>
+    `<button class="chip ${filter === k ? "on" : ""}" data-k="${k}">${label} <span style="opacity:.7">${DATA.samples.filter(fn).length}</span></button>`).join("");
+  $("filters").querySelectorAll("button").forEach(b => b.onclick = () => { filter = b.dataset.k; renderFilters(); renderList(); });
+}
+
+function pillsFor(s) {
+  const c = counts(s), out = [];
+  const add = (key, n, text) => n && out.push(`<span class="pill" style="background:${STATUS[key].color}" title="${STATUS[key].label}">${text}${n > 1 ? "×" + n : ""}</span>`);
+  add("matched", c.matched, "✓");
+  add("wrong_content", c.wrong_content, "≠");
+  add("early_activation", c.early_activation, "early");
+  add("false_activation", (c.false_activation || 0) + (c.duplicate || 0), "false");
+  add("ref_missed", c.ref_missed, "missed");
+  if (!s.responses.length) out.push(`<span class="pill" style="background:#7D8796">silent</span>`);
+  return out.join("");
+}
+
+function renderList() {
+  const fn = FILTERS.find(f => f[0] === filter)[2];
+  const q = query.trim().toLowerCase();
+  const items = DATA.samples.filter(fn).filter(s => !q || s.id.includes(q) || s.instructions.some(i => i.content.toLowerCase().includes(q)));
+  $("list").innerHTML = items.map(s => `
+    <button class="item ${current && current.id === s.id ? "active" : ""}" data-id="${s.id}">
+      <div class="row1"><span>${s.id.replace("t2_audio_dev_", "#")} · ${esc(s.level)} · ${esc(s.audio_type)}</span><span class="pills">${pillsFor(s)}</span></div>
+      <div class="ins">${esc(s.instructions.map(i => i.content).join(" / "))}</div>
+    </button>`).join("") || `<div class="detail">No recordings match.</div>`;
+  $("list").querySelectorAll("button").forEach(b => b.onclick = () => select(b.dataset.id));
+}
+
+function badge(key) {
+  const st = STATUS[key];
+  return `<span class="badge" style="background:${st.color}" title="${esc(st.help)}">${st.label}</span>`;
+}
+
+function select(id) {
+  const s = DATA.samples.find(x => x.id === id);
+  if (!s) return;
+  current = s;
+  history.replaceState(null, "", "#" + id);
+  const tour = DATA.showcase.find(t => t.id === id);
+  document.querySelectorAll(".tour-card").forEach(b => b.classList.toggle("active", b.dataset.id === id));
+  renderList();
+
+  const dur = s.duration, pct = t => `${Math.max(0, Math.min(100, (t / dur) * 100))}%`;
+  const tol = DATA.metrics[DATA.primary_judge].protocol;
+  const ticks = []; for (let t = 0; t <= dur; t += dur > 150 ? 20 : 10) ticks.push(`<span style="left:${pct(t)}">${t}s</span>`);
+  const chunks = s.chunks.map(([e, text], i) => `<div data-t="${i * s.chunk_seconds}" style="background:${e ? "var(--speak)" : "var(--silent)"}" title="${fmtT(i * s.chunk_seconds)}–${fmtT((i + 1) * s.chunk_seconds)}: ${e ? "speaking: " + esc(text) : "listening (silent)"}"></div>`).join("");
+  const resp = s.responses.map((r, i) => {
+    const st = STATUS[r.status];
+    const width = Math.max(((r.end_time - r.time + s.chunk_seconds) / dur) * 100, 0.8);
+    return `<div class="resp" data-kind="r" data-i="${i}" data-t="${r.time}" style="left:calc(${pct(r.time - s.chunk_seconds)});width:${width}%;background:${st.color}" title="${fmtT(r.time)} · ${st.label}: ${esc(r.content)}">${esc(r.content)}</div>`;
+  }).join("");
+  const windows = s.references.map(r => `<div class="window" data-kind="w" data-t="${r.time}" style="left:${pct(r.time - tol.tolerance_before)};width:calc(${pct(r.time + tol.tolerance_after)} - ${pct(r.time - tol.tolerance_before)})"></div>`).join("");
+  const silence = s.silent_spans.map(([a, b]) => `<div class="silence" style="left:${pct(a)};width:calc(${pct(b)} - ${pct(a)})" title="${fmtT(a)}–${fmtT(b)}: the original recording contains no sound here (dataset audio, not the demo)">${(b - a) / dur > 0.06 ? "<span>silence</span>" : ""}</div>`).join("");
+  const silentTotal = s.silent_spans.reduce((n, [a, b]) => n + b - a, 0);
+  const gts = s.references.map((r, i) => `<div class="gt" data-kind="g" data-i="${i}" data-t="${r.time}" style="left:${pct(r.time)};background:${STATUS[refKey(r.status)].color}" title="${fmtT(r.time)} · ground truth (${STATUS[refKey(r.status)].label}): ${esc(r.content)}"></div>`).join("");
+
+  const rows = [];
+  s.responses.forEach((r, i) => {
+    let d = STATUS[r.status].help;
+    if (r.matched_reference != null) {
+      const ref = s.references[r.matched_reference];
+      d = `Matches ground truth at ${fmtT(ref.time)} (Δt ${r.time - ref.time >= 0 ? "+" : ""}${(r.time - ref.time).toFixed(1)} s)` + (r.score != null ? ` · judge ${r.score}/5` : "");
+    } else if (r.status === "wrong_content" && r.best_score != null) d += ` · judge ${r.best_score}/5`;
+    rows.push({ t: r.time, html: `<td>${fmtT(r.time)}</td><td class="who model">Model</td><td data-reveal="not yet…">${esc(r.content)}</td><td data-reveal title="${esc(d)}">${badge(r.status)}</td>`, kind: "r", i });
+  });
+  s.references.forEach((r, i) => {
+    let d = STATUS[refKey(r.status)].help;
+    if (r.matched_response != null) d = `Answered by the model at ${fmtT(s.responses[r.matched_response].time)}`;
+    rows.push({ t: r.time, html: `<td>${fmtT(r.time)}</td><td class="who truth">Expected</td><td data-reveal="not yet…">${esc(r.content)}</td><td data-reveal title="${esc(d)}">${badge(refKey(r.status))}</td>`, kind: "g", i });
+  });
+  const cueList = (tour && tour.cues) || [];
+  const cues = cueList.map(c => `<div class="cue${c.time / dur > 0.95 ? " flip" : ""}" style="left:${pct(c.time)}" title="${fmtT(c.time)} · ${esc(c.text || c.label)}"><span>${esc(c.label)}</span></div>`).join("");
+  cueList.forEach(c => rows.push({ t: c.time, html: `<td>${fmtT(c.time)}</td><td class="who audio">In the audio</td><td>${esc(c.text || c.label)}</td><td></td>`, kind: "c" }));
+  rows.sort((a, b) => a.t - b.t || ({ c: 0, g: 1, r: 2 }[a.kind] - { c: 0, g: 1, r: 2 }[b.kind]));
+
+  const c = counts(s);
+  const summary = [
+    c.matched ? `${c.matched} correct` : null, c.wrong_content ? `${c.wrong_content} wrong content` : null,
+    c.early_activation ? `${c.early_activation} early` : null, c.false_activation ? `${c.false_activation} false` : null,
+    c.duplicate ? `${c.duplicate} duplicate` : null, c.ref_missed ? `${c.ref_missed} missed` : null,
+  ].filter(Boolean).join(" · ") || (s.responses.length ? "" : "model stayed silent");
+
+  $("main").innerHTML = `
+    <div class="head">
+      <h2>${esc(s.id)}</h2>
+      <span class="tag">Level ${esc(s.level)}</span><span class="tag">${esc(s.audio_type)} audio</span>
+      <span class="tag">${dur.toFixed(0)} s</span>
+      <span class="detail">${esc(summary)}</span>
+    </div>
+    <div class="instruction">
+      <div class="lbl">The instruction</div>
+      <div class="q">“${esc(s.instructions.map(i => i.content).join(" / "))}”</div>
+    </div>
+    ${tour ? `<div class="story"><b>${tour.kind === "success" ? "Why it works" : "What goes wrong"}</b> ${esc(tour.note)}</div>` : ""}
+    <div class="player">
+      <div class="controls">
+        <audio id="audio" controls preload="auto" src="/heartbeat/audio/${encodeURIComponent(s.id)}.wav"></audio>
+        <label title="Hide outputs and answers until the playhead reaches them, like watching the stream live"><input type="checkbox" id="along" ${playAlong ? "checked" : ""}> Play-along</label>
+        <label>Speed <select id="rate"><option>1</option><option>1.5</option><option>2</option></select>×</label>
+      </div>
+      <div class="now">
+        <div class="box"><div class="lbl"><span>Model right now</span><span id="clock">0.0 s</span></div><div class="state listen" id="state">listening</div></div>
+        <div class="box"><div class="lbl"><span>Last thing it said</span><span id="lastT"></span></div><div id="last" class="detail">–</div></div>
+      </div>
+      <div class="timeline" id="timeline">
+        <div class="lane-label">Speaking</div>
+        <div class="chunkstrip" id="strip">${chunks}</div>
+        <div class="lane-label">Model answers</div>
+        <div class="lane" id="laneR">${resp}</div>
+        <div class="lane-label">Expected (±${tol.tolerance_after} s window)</div>
+        <div class="lane" id="laneG">${windows}${gts}</div>
+        <div class="axis">${ticks.join("")}</div>
+        ${silence}${cues}
+        <div class="playhead" id="playhead" style="left:0"></div>
+      </div>
+      <div class="legend">
+        ${["matched", "wrong_content", "early_activation", "false_activation", "ref_missed"].map(k => `<span title="${esc(STATUS[k].help)}"><i style="background:${STATUS[k].color}"></i>${STATUS[k].label}</span>`).join("")}
+        <span><i style="background:rgba(91,130,184,.14);border:1px dashed rgba(91,130,184,.7)"></i>Window</span>
+      </div>
+    </div>
+    <table class="events" id="events">
+      <tr><th style="width:80px">Time</th><th style="width:110px">Who</th><th>What was said</th><th style="width:130px">Result</th></tr>
+      ${rows.map(r => `<tr data-t="${r.t}" data-kind="${r.kind}">${r.html}</tr>`).join("") || `<tr><td colspan="4" class="detail">No events.</td></tr>`}
+    </table>`;
+
+  const audio = $("audio");
+  const seek = t => { audio.currentTime = Math.max(0, t); audio.play().catch(() => {}); };
+  $("timeline").querySelectorAll("[data-t]").forEach(el => el.addEventListener("click", ev => { ev.stopPropagation(); seek(+el.dataset.t - 3); }));
+  ["laneR", "laneG", "strip"].forEach(id => $(id).addEventListener("click", ev => {
+    const rect = $(id).getBoundingClientRect(); seek(((ev.clientX - rect.left) / rect.width) * dur);
+  }));
+  $("events").querySelectorAll("tr[data-t]").forEach(tr => tr.onclick = () => seek(+tr.dataset.t - 3));
+  $("along").onchange = e => { playAlong = e.target.checked; update(); };
+  $("rate").onchange = e => { audio.playbackRate = +e.target.value; };
+  audio.addEventListener("error", () => { $("state").textContent = "Could not load the recording (see the terminal running the demo)."; });
+
+  function update() {
+    const t = audio.currentTime || 0;
+    $("playhead").style.left = pct(t);
+    $("clock").textContent = fmtT(t);
+    const ci = Math.min(s.chunks.length - 1, Math.floor(t / s.chunk_seconds));
+    const done = ci - 1;  // a chunk's output exists only once the chunk has ended
+    const st = $("state");
+    if (done >= 0 && s.chunks[done][0]) { st.className = "state speak"; st.textContent = "speaking: " + (s.chunks[done][1] || "…"); }
+    else { st.className = "state listen"; st.textContent = "listening"; }
+    if (s.silent_spans.some(([a, b]) => t >= a && t < b)) st.insertAdjacentHTML("beforeend", ` <span class="silence-hint">· silence</span>`);
+    const emitted = s.responses.filter(r => r.time <= t + 1e-6);
+    const last = emitted[emitted.length - 1];
+    $("last").innerHTML = last ? `${badge(last.status)} ${esc(last.content)}` : "–";
+    $("lastT").textContent = last ? fmtT(last.time) : "";
+    document.querySelectorAll("#laneR .resp, #laneG .gt, #laneG .window, #strip div").forEach(el => el.classList.toggle("future", playAlong && +el.dataset.t > t));
+    document.querySelectorAll("#events tr[data-t]").forEach(tr => {
+      const future = playAlong && +tr.dataset.t > t;
+      tr.classList.toggle("future", future);
+      tr.querySelectorAll("[data-reveal]").forEach(cell => {
+        if (cell.dataset.future === String(future)) return;
+        if (cell.dataset.text === undefined) cell.dataset.text = cell.innerHTML;
+        cell.dataset.future = String(future);
+        cell.innerHTML = future ? `<span class="hidden-text">${esc(cell.dataset.reveal)}</span>` : cell.dataset.text;
+      });
+      tr.classList.toggle("current", Math.abs(+tr.dataset.t - t) <= 1.5);
+    });
+  }
+  audio.addEventListener("timeupdate", update);
+  audio.addEventListener("seeked", update);
+  let raf; const loop = () => { update(); raf = requestAnimationFrame(loop); };
+  audio.addEventListener("play", () => { cancelAnimationFrame(raf); loop(); });
+  audio.addEventListener("pause", () => cancelAnimationFrame(raf));
+  update();
+}
+
+document.addEventListener("keydown", e => {
+  if (e.code === "Space" && !["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(document.activeElement.tagName)) {
+    const a = $("audio"); if (a) { e.preventDefault(); a.paused ? a.play() : a.pause(); }
+  }
+});
+$("search").addEventListener("input", e => { query = e.target.value; renderList(); });
+
+fetch("/heartbeat/data.json", { cache: "no-store" }).then(r => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); }).then(d => {
+  DATA = d;
+  renderHeader(); renderTour(); renderFilters(); renderList();
+  const fromHash = location.hash.slice(1);
+  select(DATA.samples.some(s => s.id === fromHash) ? fromHash : (DATA.showcase[0] || DATA.samples[0]).id);
+}).catch(err => {
+  document.body.innerHTML = `<div class="err"><h2>Could not load the saved results</h2><p>${esc(err.message)}</p><p>Start the demo with <code>python demo/serve_demo.py</code> and open the address it prints.</p></div>`;
+});
+</script>
+</body>
+</html>

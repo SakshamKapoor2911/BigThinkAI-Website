@@ -1,37 +1,72 @@
+import Head from 'next/head'
+import Navigation from '../components/Navigation'
+
+/* Type specimens. Companion to /typography, which documents the system. */
+const SPECIMENS = [
+  { size: '4rem', weight: 200, label: 'Display 200 / 64px' },
+  { size: '2.5rem', weight: 200, label: 'Display 200 / 40px' },
+  { size: '1.5rem', weight: 300, label: 'Display 300 / 24px' },
+]
+
 export default function FontsPage() {
   return (
-    <div className="min-h-screen p-12 bg-background text-foreground film-grain">
-      <div className="max-w-3xl mx-auto">
-        <p className="kicker">Typography • Visual Spec</p>
-        <h1 className="text-4xl font-serif font-bold mt-4 mb-2">BigThinkAI — Typeface System</h1>
-        <p className="text-lg text-muted mb-8">Headlines use <strong>Newsreader</strong> (serif). Body copy uses a clean sans (Geist / Inter). Monospace is used for technical labels and dates.</p>
+    <div className="page film-grain">
+      <Head>
+        <title>Specimens · BigThink AI</title>
+        <meta name="robots" content="noindex" />
+      </Head>
+      <Navigation />
 
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold font-serif mb-4">Headlines & Kicker</h2>
-          <p className="kicker">KICKER / OVERLINE • Newsreader Italic</p>
-          <h3 className="text-3xl font-serif font-medium mt-3">Serif Heading — Newsreader</h3>
-          <p className="mt-4">Example subheading and a short blurb demonstrating line-height, spacing, and color.</p>
+      <main className="shell" style={{ paddingBlock: '8rem 5rem' }}>
+        <div className="section-head">
+          <p className="kicker">Spec / Specimens</p>
+          <h1 className="h1-display">Type Specimens</h1>
+          <span className="hatch" aria-hidden="true" />
+          <p className="section-lede">
+            Josefin Sans for display, Oswald for labels, JetBrains Mono for everything
+            else. See <a href="/typography">/typography</a> for how the system fits together.
+          </p>
+        </div>
+
+        <section className="card" style={{ marginBottom: '1.5rem' }}>
+          <p className="field__label">Display · Josefin Sans</p>
+          {SPECIMENS.map((s) => (
+            <div key={s.label} style={{ marginBottom: '1.75rem' }}>
+              <p
+                className="display"
+                style={{ fontSize: s.size, fontWeight: s.weight, marginBottom: '0.4rem' }}
+              >
+                Think Big
+              </p>
+              <p style={{ color: 'var(--text-faint)', fontSize: '0.72rem', margin: 0 }}>
+                {s.label}
+              </p>
+            </div>
+          ))}
         </section>
 
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-4">Body / UI Copy</h2>
-          <p className="text-base leading-7">This is a paragraph using the primary UI sans-serif (Geist substitute). It demonstrates readable body copy with comfortable line-height. Use font utility classes `font-sans` and `font-serif` to control context-specific usage.</p>
+        <section className="card" style={{ marginBottom: '1.5rem' }}>
+          <p className="field__label">Label · Oswald</p>
+          <p className="label" style={{ fontSize: '1.5rem', margin: '0 0 0.5rem' }}>
+            Sector · Description · Deliverable
+          </p>
+          <p style={{ color: 'var(--text-faint)', fontSize: '0.72rem', margin: 0 }}>
+            Oswald 600 / uppercase / 0.09em tracking
+          </p>
         </section>
 
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-4">Monospace</h2>
-          <p className="font-mono bg-muted p-4 rounded-md"><code>2026-02-11 • commit: 7a1f3c2 • size: 14KB</code></p>
+        <section className="card">
+          <p className="field__label">Body · JetBrains Mono</p>
+          <p style={{ marginTop: 0 }}>
+            We&apos;re building the first world model benchmark that measures with
+            particle-level ground truth instead of a VLM&apos;s opinion, to find out
+            where world models stop being physics engines.
+          </p>
+          <p style={{ color: 'var(--text-faint)', fontSize: '0.72rem', margin: 0 }}>
+            JetBrains Mono 400 / 15px / 1.75 line-height, the default on <code>body</code>
+          </p>
         </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">Usage guidance</h2>
-          <ul className="list-disc ml-6 space-y-2">
-            <li>Use <strong>Newsreader</strong> for headings and small italic kickers.</li>
-            <li>Use the sans variable for body, buttons, and nav. Replace with Geist Sans local files if licensed.</li>
-            <li>Monospace for small technical labels and code snippets.</li>
-          </ul>
-        </section>
-      </div>
+      </main>
     </div>
   )
 }
